@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Plotly report</title>
+<script src="lib/plotly.min.js"></script></head>
+<body>
+<h1>Training report</h1>
+<div>                        <script type="text/javascript">window.PLOTLYENV=window.PLOTLYENV || {};</script>
+        <div id="3f1c2a" class="plotly-graph-div" style="height:360px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("3f1c2a")) {                    Plotly.newPlot(                        "3f1c2a",                        [{"mode":"lines","name":"ours","x":[1,2,3,4],"y":[0.9,0.5,0.31,0.2],"type":"scatter","line":{"color":"#1f77b4"}},{"mode":"lines","name":"baseline","x":[1,2,3,4],"y":[0.95,0.7,0.6,0.55],"type":"scatter","line":{"color":"#ff7f0e"}}],                        {"title":{"text":"Validation loss"},"xaxis":{"title":{"text":"epoch"}},"yaxis":{"title":{"text":"loss"}},"template":{"layout":{"font":{"color":"#2a3f5f"}}}},                        {"responsive": true}                    )                };            </script>        </div>
+<h2>Hand-written chart</h2>
+<div id="bars"></div>
+<script>
+  // AI assistants often write it like this
+  const trace = {x: ['scVI', 'PCA', 'ours'], y: [0.61, 0.48, 0.72], type: 'bar', name: 'F1',
+    marker: {color: ['#999', '#999', '#e45756']}};
+  const layout = {title: 'kNN F1 by encoder', margin: {t: 40}};
+  Plotly.newPlot('bars', [trace], layout);
+</script>
+</body>
+</html>

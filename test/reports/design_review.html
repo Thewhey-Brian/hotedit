@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Search service — design review</title>
+<style>
+  body { font: 15px/1.6 -apple-system, system-ui, sans-serif; max-width: 920px; margin: 0 auto; padding: 32px 24px; color: #1c1917; }
+  .fig { border: 1px solid #e7e5e4; border-radius: 10px; padding: 14px; margin: 16px 0; background: #fafaf9; }
+  pre.mermaid { margin: 0; }
+  h2 { border-bottom: 1px solid #e7e5e4; padding-bottom: 4px; }
+</style>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: false, theme: 'neutral', flowchart: { curve: 'basis', htmlLabels: true }, securityLevel: 'loose' });
+  await mermaid.run({ querySelector: 'pre.mermaid' });
+</script>
+</head>
+<body>
+<h1>Search service &mdash; design review</h1>
+<p>Proposal for replacing the keyword search with a hybrid (keyword + embedding) retriever. Reviewed by the platform team.</p>
+<h2>1. Request flow</h2>
+<div class="fig"><pre class="mermaid">
+flowchart LR
+  U["user query"] --> A["API gateway"]
+  A --> K["keyword index<br/>BM25"]
+  A --> E["embedding index<br/>top-k = 100"]
+  K --> R["re-ranker"]
+  E --> R
+  R --> U
+</pre></div>
+<h2>2. Indexing pipeline</h2>
+<div class="fig"><pre class="mermaid">
+flowchart TD
+  D["new documents"] --> C["chunk (512 tokens)"]
+  C --> M["embed"]
+  C --> T["tokenise"]
+  M --> V[("vector store")]
+  T --> B[("inverted index")]
+</pre></div>
+<h2>3. Rollout</h2>
+<div class="fig"><pre class="mermaid">
+gantt
+  dateFormat  YYYY-MM-DD
+  title Rollout plan
+  section Build
+  Index backfill      :a1, 2026-02-01, 14d
+  Shadow traffic      :a2, after a1, 7d
+  section Launch
+  10% traffic         :b1, after a2, 7d
+  100% traffic        :b2, after b1, 3d
+</pre></div>
+<h2>4. Failure handling</h2>
+<div class="fig"><pre class="mermaid">
+sequenceDiagram
+  participant G as Gateway
+  participant E as Embedding index
+  participant K as Keyword index
+  G->>E: query (timeout 80 ms)
+  E-->>G: timeout
+  G->>K: fall back to keyword only
+  K-->>G: results
+</pre></div>
+<h2>5. Ownership</h2>
+<div class="fig"><pre class="mermaid">
+flowchart LR
+  P["platform team"] --- I["indexes"]
+  S["search team"] --- R["re-ranker"]
+  S --- A["API"]
+</pre></div>
+<h2>Decision</h2>
+<p>Approved for shadow traffic. Re-review after two weeks with latency and click-through numbers.</p>
+</body>
+</html>

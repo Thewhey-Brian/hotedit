@@ -1,0 +1,64 @@
+{
+  "name": "htmledit",
+  "version": "0.1.0",
+  "description": "Edit any HTML file in your browser — text, styles, layout, charts — and save the changes back into the file as small, clean patches. Built for AI-generated reports.",
+  "keywords": [
+    "html",
+    "editor",
+    "wysiwyg",
+    "visual-editor",
+    "contenteditable",
+    "ai",
+    "llm",
+    "report",
+    "plotly",
+    "chart.js",
+    "vega-lite",
+    "mermaid",
+    "claude-code",
+    "agent"
+  ],
+  "homepage": "https://github.com/Thewhey-Brian/htmledit#readme",
+  "bugs": {
+    "url": "https://github.com/Thewhey-Brian/htmledit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Thewhey-Brian/htmledit.git"
+  },
+  "license": "MIT",
+  "author": "Thewhey-Brian (https://github.com/Thewhey-Brian)",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "bin": {
+    "htmledit": "bin/htmledit.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "agent/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:unit": "node --test test/doc.test.js test/charts.test.js test/chartform.test.js test/comments.test.js"
+  },
+  "dependencies": {
+    "parse5": "^7.3.0",
+    "entities": "^6.0.1"
+  },
+  "devDependencies": {
+    "chart.js": "^4.5.1",
+    "mermaid": "^12.2.0",
+    "playwright": "^1.64.1",
+    "plotly.js-dist-min": "^4.1.2",
+    "vega": "^6.4.0",
+    "vega-embed": "^7.3.0",
+    "vega-lite": "^6.5.0"
+  }
+}

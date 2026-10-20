@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Chart.js report</title>
+<script src="lib/chart.umd.js"></script></head>
+<body>
+<h1>Benchmark</h1>
+<div style="width:600px"><canvas id="scores"></canvas></div>
+<script>
+  const ctx = document.getElementById('scores');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Forecast', 'Identity', 'Transfer'],
+      datasets: [{
+        label: 'Ours',
+        data: [82, 64, 71],
+        backgroundColor: '#4e79a7',
+      }, {
+        label: 'Baseline',
+        data: [69, 60, 50],
+        backgroundColor: '#f28e2b',
+      }]
+    },
+    options: {
+      animation: false,
+      plugins: { title: { display: true, text: 'Scores by task' } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'score' } } },
+      onClick: (e) => console.log(e),
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Review corpus v2 — data report</title>
+<style>
+body{font-family:Georgia,serif;max-width:820px;margin:40px auto;padding:0 20px;color:#222;line-height:1.55}
+h1{font-family:system-ui,sans-serif}
+.kpis{display:flex;gap:14px;margin:20px 0}
+.kpi{flex:1;border:1px solid #ddd;border-radius:10px;padding:12px 16px}
+.kpi b{display:block;font:700 26px system-ui,sans-serif}
+table{border-collapse:collapse;width:100%}
+td,th{border-bottom:1px solid #eee;padding:6px 8px;text-align:right}
+td:first-child,th:first-child{text-align:left}
+details{margin:12px 0}
+.note{color:#666;font-size:14px}
+</style>
+</head>
+<body>
+<h1>Review corpus v2</h1>
+<p class="note">Data report for the sentiment classifier &middot; built 2026-01-12 &middot; source: public product reviews</p>
+<div class="kpis">
+  <div class="kpi"><b>1.84M</b>reviews</div>
+  <div class="kpi"><b>27</b>languages</div>
+  <div class="kpi"><b>4.1%</b>duplicates removed</div>
+</div>
+<p>The corpus combines reviews from eleven public datasets. We removed exact and near duplicates, dropped reviews shorter than five words and balanced the star ratings within each language.</p>
+<p>Splits are made by <em>product</em>, not by review, so no product appears in both train and test. This avoids leaking product-specific vocabulary into evaluation.</p>
+<p>Labels follow the star rating: 1&ndash;2 stars are negative, 3 is neutral and 4&ndash;5 are positive.</p>
+<h2>Sources</h2>
+<table>
+  <thead><tr><th>Source</th><th>Reviews</th><th>Languages</th><th>Kept</th></tr></thead>
+  <tr><td>Shop A</td><td>612,004</td><td>9</td><td>96.2%</td></tr>
+  <tr><td>Shop B</td><td>480,311</td><td>14</td><td>93.8%</td></tr>
+  <tr><td>Forum C</td><td>301,887</td><td>6</td><td>88.1%</td></tr>
+  <tr><td>Other (8 sources)</td><td>445,920</td><td>27</td><td>91.5%</td></tr>
+</table>
+<h2>Splits</h2>
+<ul>
+  <li><b>train</b> &mdash; 1.47M reviews (80%)</li>
+  <li><b>val</b> &mdash; 184k reviews (10%)</li>
+  <li><b>test</b> &mdash; 184k reviews (10%), products never seen in training</li>
+</ul>
+<details>
+  <summary>Cleaning rules</summary>
+  <ol>
+    <li>Strip HTML and normalise Unicode (NFKC).</li>
+    <li>Drop reviews with &lt; 5 words or &gt; 2,000 words.</li>
+    <li>Near-duplicate threshold: MinHash Jaccard &ge; 0.9.</li>
+  </ol>
+</details>
+<!-- generated: corpus pipeline v2.3 -->
+<p class="note">Questions? See <a href="https://example.com/corpus-docs">the corpus docs</a>.</p>
+</body>
+</html>

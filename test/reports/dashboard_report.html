@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Classifier dashboard</title>
+<style>
+  body { margin: 0; font: 14px/1.5 system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+  header { padding: 24px 32px; border-bottom: 1px solid #1e293b; }
+  h1 { margin: 0; font-size: 22px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; padding: 24px 32px; }
+  .card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 16px 18px; }
+  .card h2 { font-size: 15px; margin: 0 0 10px; color: #93c5fd; }
+  svg text { fill: #cbd5e1; font-size: 12px; }
+  #leaderboard td { padding: 4px 8px; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 99px; background: #1e3a8a; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sentiment classifier &mdash; evaluation dashboard</h1>
+  <p>Held-out test set, 184k reviews, 27 languages. <span class="tag">auto-generated</span></p>
+</header>
+<div class="grid">
+  <div class="card">
+    <h2>Accuracy by model</h2>
+    <svg id="f1" width="320" height="180" viewBox="0 0 320 180" role="img">
+      <text x="10" y="20">Macro F1 on the test set</text>
+      <rect x="20" y="40" width="60" height="110" fill="#64748b"/>
+      <rect x="110" y="70" width="60" height="80" fill="#64748b"/>
+      <rect x="200" y="30" width="60" height="120" fill="#3b82f6"/>
+      <text x="28" y="168">bag-of-words</text>
+      <text x="120" y="168">fastText</text>
+      <text x="212" y="168">ours</text>
+    </svg>
+  </div>
+  <div class="card">
+    <h2>Errors by language</h2>
+    <svg id="f2" width="320" height="180" viewBox="0 0 320 180">
+      <text x="10" y="20">Error rate (%)</text>
+      <polyline points="20,140 70,120 120,128 170,90 220,96 270,60" fill="none" stroke="#f472b6" stroke-width="2"/>
+      <circle cx="270" cy="60" r="4" fill="#f472b6"/>
+    </svg>
+  </div>
+  <div class="card">
+    <h2>Leaderboard</h2>
+    <table id="leaderboard"></table>
+  </div>
+  <div class="card">
+    <h2>Notes</h2>
+    <p>Our model leads on 22 of 27 languages. The largest gains are on short reviews (&lt; 20 words).</p>
+    <p id="updated">Last updated: loading&hellip;</p>
+  </div>
+</div>
+<script>
+  // Built by script: these rows are not in the HTML source.
+  const rows = [["ours", 0.871], ["fastText", 0.812], ["bag-of-words", 0.744]];
+  document.getElementById("leaderboard").innerHTML = rows.map(([m, f]) => `<tr><td>${m}</td><td>${f.toFixed(3)}</td></tr>`).join("");
+  document.getElementById("updated").textContent = "Last updated: " + new Date(2026, 0, 12).toDateString();
+  document.querySelectorAll("#f1 rect").forEach((r, i, all) => { if (i === all.length - 1) r.style.fill = "#60a5fa"; });
+</script>
+</body>
+</html>

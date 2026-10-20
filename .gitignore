@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+test-results/
+playground/
+# local only: private sample reports, dev notes, scratch copies
+samples/
+PLAN.md
+.htmledit/
+*.tgz

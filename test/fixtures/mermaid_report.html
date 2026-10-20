@@ -1,0 +1,14 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Mermaid report</title></head>
+<body>
+<h1>Pipeline</h1>
+<pre class="mermaid">
+flowchart LR
+  A["raw counts"] --> B["<b>encoder</b><br/>z in R^64"]
+  B --> C["dynamics"]
+</pre>
+<script src="lib/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true });</script>
+</body>
+</html>

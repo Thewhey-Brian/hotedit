@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Vega report</title>
+<script src="lib/vega.min.js"></script>
+<script src="lib/vega-lite.min.js"></script>
+<script src="lib/vega-embed.min.js"></script></head>
+<body>
+<h1>Corpus</h1>
+<div id="vis"></div>
+<script>
+  var spec = {
+    "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+    "title": "Cells per dataset",
+    "data": {"values": [{"d": "brain", "n": 4.2}, {"d": "retina", "n": 1.1}, {"d": "gut", "n": 0.6}]},
+    "mark": {"type": "bar", "color": "#e45756"},
+    "encoding": {
+      "x": {"field": "d", "type": "nominal", "title": "dataset"},
+      "y": {"field": "n", "type": "quantitative", "title": "million cells"}
+    }
+  };
+  vegaEmbed('#vis', spec, {actions: false, renderer: 'svg'});
+</script>
+</body>
+</html>
