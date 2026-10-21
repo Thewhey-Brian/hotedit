@@ -13,7 +13,7 @@ const editingText = (page) =>
 test("click from block to block: each text edit is saved on the way", async () => {
   const s = await open({ name: "f.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   for (const [sel, add] of [["h1", "!"], ["body > p >> nth=0", "?"], ["body > p >> nth=1", "."]]) {
     await page.locator(sel).click();
     await page.keyboard.press("End");
@@ -28,7 +28,7 @@ test("click from block to block: each text edit is saved on the way", async () =
 test("click another block while the style panel is open: style saved, next block editing", async () => {
   const s = await open({ name: "g.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("h1").click();
   await page.waitForFunction(() => window.__htmledit.selected && window.__htmledit.selected.isContentEditable);
   await page.keyboard.press("Escape");
@@ -47,7 +47,7 @@ test("click another block while the style panel is open: style saved, next block
 test("click another block while editing HTML source: saved (page reloads) and next block editing", async () => {
   const s = await open({ name: "h.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("h1").click();
   await page.waitForFunction(() => window.__htmledit.selected && window.__htmledit.selected.isContentEditable);
   await page.keyboard.press("Escape");
@@ -65,7 +65,7 @@ test("click another block while editing HTML source: saved (page reloads) and ne
 test("source edit then click: after the reload the clicked block is ready to type", async () => {
   const s = await open({ name: "k.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("h1").click();
   await page.waitForFunction(() => window.__htmledit.selected && window.__htmledit.selected.isContentEditable);
   await page.keyboard.press("Escape");

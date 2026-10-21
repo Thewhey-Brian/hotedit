@@ -284,10 +284,23 @@ function saveConfig(patch) {
 
 function findOnPath(cmd) {
   const dirs = (process.env.PATH || "").split(path.delimiter);
+  // Where installers put agent CLIs, for a hotedit started outside a login
+  // shell (e.g. from an app) whose PATH misses them.
+  const home = os.homedir();
   dirs.push(
-    path.join(os.homedir(), ".local", "bin"),
-    path.join(os.homedir(), ".claude", "local"),
+    path.join(home, ".local", "bin"),
+    path.join(home, ".claude", "local"),
+    "/opt/homebrew/bin",
+    "/usr/local/bin",
+    path.join(home, ".npm-global", "bin"),
+    path.join(home, ".bun", "bin"),
+    path.join(home, ".volta", "bin"),
+    path.join(home, "AppData", "Roaming", "npm"),
   );
+  try {
+    const nvm = path.join(home, ".nvm", "versions", "node");
+    for (const v of fs.readdirSync(nvm)) dirs.push(path.join(nvm, v, "bin"));
+  } catch {}
   const exts = process.platform === "win32" ? [".cmd", ".exe", ""] : [""];
   for (const d of dirs)
     for (const e of exts) {
@@ -307,6 +320,13 @@ const binFor = (name, env) => () => {
 const claudeBin = binFor("claude", "HOTEDIT_CLAUDE_BIN");
 const codexBin = binFor("codex", "HOTEDIT_CODEX_BIN");
 
+// Other agent CLIs we can suggest a command for, when installed.
+const PRESETS = [
+  { name: "Gemini CLI", bin: "gemini", command: "gemini -y" },
+  { name: "OpenCode", bin: "opencode", command: "opencode run" },
+  { name: "Cursor", bin: "cursor-agent", command: "cursor-agent -p --output-format text --force" },
+];
+
 // What the browser may know: never the key itself.
 function status() {
   const cfg = loadConfig();
@@ -323,6 +343,7 @@ function status() {
     provider,
     model: cfg.model || "",
     command: cfg.command || "",
+    detected: PRESETS.filter((x) => findOnPath(x.bin)).map(({ name, command }) => ({ name, command })),
     providers: [
       {
         id: "claude",

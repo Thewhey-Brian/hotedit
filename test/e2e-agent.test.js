@@ -14,7 +14,7 @@ test("✨ panel: connect, ask about the selected block, live edit, undo", async 
   const s = await open({ name: "a.html", html: "<!doctype html><body>\n<h1>Old title</h1>\n<p>Some text here.</p>\n</body>\n" });
   const { page } = s;
   try {
-    await page.keyboard.press("e");
+    await page.keyboard.press("Alt+KeyE");
     await page.locator("h1").click();
     await page.waitForFunction(() => window.__htmledit.selected && window.__htmledit.selected.isContentEditable);
     await page.keyboard.press("Escape");
@@ -54,7 +54,7 @@ test("✨ without a connected AI: Do it asks to connect", async () => {
   const { page } = s;
   try {
     await page.evaluate(() => window.__htmledit.api("POST", "/agent/config", { provider: "", apiKey: "" }));
-    await page.keyboard.press("e");
+    await page.keyboard.press("Alt+KeyE");
     await page.locator("body > p").click();
     await page.waitForFunction(() => window.__htmledit.selected && window.__htmledit.selected.isContentEditable);
     await page.keyboard.press("Escape");
@@ -100,7 +100,7 @@ test("AI edits land in place: text, new items, styles, head CSS and chart data",
     assert.ok(await page.evaluate(() => window.__noReload), "no reloads");
     // Ids moved with the new <li>: editing by hand still lands in the right place.
     assert.ok((await page.evaluate(() => window.__htmledit.version)) > v0);
-    await page.keyboard.press("e");
+    await page.keyboard.press("Alt+KeyE");
     await page.locator("#after").click();
     await page.keyboard.press("End");
     await page.keyboard.type("!");
@@ -120,13 +120,13 @@ test("hovering a button shows what it does and its shortcut", async () => {
     await ui(page, ".bar .undo").hover();
     await ui(page, ".tip").waitFor({ state: "visible" });
     assert.match(await ui(page, ".tip").textContent(), /Undo the last change\s*(⌘|Ctrl\+)Z/);
-    await page.keyboard.press("e");
+    await page.keyboard.press("Alt+KeyE");
     await page.locator("body > p").click();
     await page.keyboard.press("Escape");
     await ui(page, '.bb [data-act="style"]').hover();
-    await page.waitForFunction(() => /Style.*S$/.test(document.querySelector("htmledit-overlay").shadowRoot.querySelector(".tip").textContent));
+    await page.waitForFunction(() => /Style.*(⌥|Alt\+)S$/.test(document.querySelector("htmledit-overlay").shadowRoot.querySelector(".tip").textContent));
     await ui(page, '.bb [data-act="more"]').click();
-    assert.match(await ui(page, '.menu [data-act="duplicate"]').textContent(), /Duplicate(⌘|Ctrl\+)D/);
+    assert.match(await ui(page, '.menu [data-act="duplicate"]').textContent(), /Duplicate(⌥|Alt\+)D/);
   } finally {
     await s.close();
   }
@@ -136,10 +136,10 @@ test("Done saves the open panel and stops editing", async () => {
   const s = await open({ name: "d.html", html: "<!doctype html><body>\n<p>Hello</p>\n</body>" });
   const { page } = s;
   try {
-    await page.keyboard.press("e");
+    await page.keyboard.press("Alt+KeyE");
     await page.locator("body > p").click();
     await page.keyboard.press("Escape");
-    await page.keyboard.press("s");
+    await page.keyboard.press("Alt+KeyS");
     await ui(page, '.sty [data-p="font-weight"]').selectOption("700");
     await ui(page, ".bar .edit").click();
     assert.ok(await until(() => s.read().includes('<p style="font-weight: 700">Hello</p>')), s.read());
@@ -159,7 +159,7 @@ test("caret colour follows the block: dark, light, gradient text", async () => {
   const s = await open({ name: "c.html", html });
   const { page } = s;
   try {
-    await page.keyboard.press("e");
+    await page.keyboard.press("Alt+KeyE");
     const caret = async (sel) => {
       await page.locator(sel).click();
       await page.waitForFunction((q) => document.querySelector(q).isContentEditable, sel);

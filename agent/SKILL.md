@@ -34,7 +34,7 @@ After writing `report.html`, tell the user how to open it:
 npx hotedit report.html   # or `hotedit report.html` if installed
 ```
 
-Then: press **E**, click any text to edit, and select a block for its toolbar (＋ add, Aa
+Then: click **✎ Edit**, click any text to edit, and select a block for its toolbar (＋ add, Aa
 style, drag ⠿ to move, 📊 chart). Don't launch it yourself unless they ask, because it opens
 a browser and keeps a server running.
 

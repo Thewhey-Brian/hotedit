@@ -51,7 +51,7 @@ async function dragTo(page, sel, target, fy = 0.75, fx = 0.5) {
 test("drag a paragraph below the next one", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await dragTo(page, "#a", "#b", 0.8);
   assert.ok(await until(() => s.read() !== s.orig));
   assert.strictEqual(
@@ -74,7 +74,7 @@ test("drag a paragraph below the next one", async () => {
 test("drag a list item into another list (different parent)", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await dragTo(page, "#l1 li >> nth=1", "#l2 li", 0.2);
   assert.ok(await until(() => s.read() !== s.orig));
   assert.strictEqual(
@@ -92,7 +92,7 @@ test("drag a list item into another list (different parent)", async () => {
 test("drag a block into a box: indentation follows the new place", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await dragTo(page, "#b", ".card p", 0.2);
   assert.ok(await until(() => s.read() !== s.orig));
   assert.strictEqual(
@@ -110,7 +110,7 @@ test("drag a block into a box: indentation follows the new place", async () => {
 test("list items only drop among list items; Esc cancels a drag", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("#l1 li").first().click();
   await page.waitForFunction(() =>
     document.querySelector("[contenteditable=true]"),
@@ -143,7 +143,7 @@ test("list items only drop among list items; Esc cancels a drag", async () => {
 test("Alt+↓ moves the selected block down", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("#a").click();
   await page.waitForFunction(() =>
     document.querySelector("[contenteditable=true]"),
@@ -164,7 +164,7 @@ test("Alt+↓ moves the selected block down", async () => {
 test("real report: drag a block below its neighbour; only those lines move", async () => {
   const s = await open("progress_report.html");
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   const h2 = page.locator("body h2").first();
   await h2.scrollIntoViewIfNeeded();
   const moved = await h2.evaluate((h) => h.nextElementSibling.textContent.trim().slice(0, 40));

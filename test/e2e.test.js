@@ -20,7 +20,7 @@ test("served page has overlay, file untouched until an edit", async () => {
 test("click-to-edit a heading saves a minimal patch; undo restores bytes", async () => {
   const s = await open("progress_report.html");
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   const h = page.locator("h2").first();
   const before = await h.textContent();
   await h.click();
@@ -63,7 +63,7 @@ test("click-to-edit a heading saves a minimal patch; undo restores bytes", async
 test("Esc cancels without writing", async () => {
   const s = await open("dataset_report.html");
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("p").nth(2).click();
   await page.keyboard.type("garbage");
   await page.keyboard.press("Escape");
@@ -87,7 +87,7 @@ test("script-rendered math opens source editor and saves source", async () => {
     await s.close();
     return; // KaTeX CDN unreachable
   }
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page
     .locator(".eq")
     .filter({ has: page.locator("annotation", { hasText: "c_{\\text{tgt}}=" }) })
@@ -123,7 +123,7 @@ test("script-rendered math opens source editor and saves source", async () => {
 test("SVG chart label edited through the text field", async () => {
   const s = await open("dashboard_report.html");
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   const t = page.locator("svg text").first();
   const old = (await t.textContent()).trim();
   await t.click();

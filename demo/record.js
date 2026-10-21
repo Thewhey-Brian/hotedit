@@ -246,7 +246,7 @@ const esc = (s) =>
   await pause(900);
 
   // ── 1. Edit mode + text ──────────────────────────────────────────────
-  await cap(1, "An AI wrote this report. Press E to edit it");
+  await cap(1, "An AI wrote this report. Press ⌥E to edit it");
   await pause(1300);
   await click(ui(".edit"));
   await pause(700);

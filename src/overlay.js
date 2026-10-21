@@ -136,6 +136,10 @@
   .agentp .opt .d.ok { color: #4ade80; }
   .agentp .opt .msg { display: block; margin: 4px 0 0 22px; font-size: 12px; }
   .agentp .opt input[type=password], .agentp .opt input[type=text] { width: calc(100% - 22px); margin: 6px 0 0 22px; }
+  .agentp .found { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 0 22px; }
+  .agentp .found:empty { display: none; }
+  .agentp .chip { padding: 2px 8px; font-size: 11.5px; border-radius: 999px; background: #27272a; }
+  .agentp .chip::before { content: "found · "; color: #4ade80; }
   .agentp code { font: 11.5px ui-monospace, monospace; background: #27272a; padding: 1px 4px; border-radius: 4px; }
   /* Panels: frosted glass, hairline edges, soft depth. */
   .panel { background: rgba(24,24,26,.92); -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%);
@@ -250,7 +254,7 @@
 <div class="tip"></div>
 <div class="hint">
   <b>Edit this page</b>
-  <ol><li>Press <kbd>E</kbd> or click <b>✎ Edit</b></li><li>Click any text and type</li><li>Click a block for its toolbar: <b>＋</b> add, <b>Aa</b> style, drag <b>⠿</b> to move</li></ol>
+  <ol><li>Click <b>✎ Edit</b> (or <kbd>${/Mac|iPhone|iPad/.test(navigator.platform) ? "⌥E" : "Alt+E"}</kbd>)</li><li>Click any text and type</li><li>Click a block for its toolbar: <b>＋</b> add, <b>Aa</b> style, drag <b>⠿</b> to move</li></ol>
   <span class="msg">Changes are saved into the file. ⌘Z undoes.</span>
   <button class="ok">Got it</button>
 </div>
@@ -318,6 +322,7 @@
       <input class="key" type="password" placeholder="sk-ant-…" autocomplete="off"></label>
     <label class="opt"><input type="radio" name="he-prov" value="command"><b>Other agent</b><span class="d" data-d="command"></span>
       <span class="msg">Any agent CLI with hotedit's tools (<code>npx hotedit mcp</code>), e.g. Gemini, OpenCode, Cursor. The request is added as its last argument (or put <code>{prompt}</code>).</span>
+      <span class="found"></span>
       <input class="cmd" type="text" placeholder="gemini -y" spellcheck="false" autocomplete="off"></label>
     <input class="model" type="text" placeholder="Model (optional)">
     <div class="row"><button class="back">Back</button><button class="primary savec">Done</button></div>
@@ -806,18 +811,19 @@
   const MOD = MAC ? "⌘" : "Ctrl+";
   const ALT = MAC ? "⌥" : "Alt+";
   const KEYS = [
-    [".edit", "E"],
+    [".edit", ALT + "E"],
     [".undo", MOD + "Z"],
     [".redo", (MAC ? "⇧⌘" : "Ctrl+Shift+") + "Z"],
-    [".aibtn, [data-act=ai]", "A"],
-    ["[data-act=style]", "S"],
-    ["[data-act=insert]", "I"],
+    [".aibtn, [data-act=ai]", ALT + "A"],
+    ["[data-act=style]", ALT + "S"],
+    ["[data-act=insert]", ALT + "I"],
     ["[data-act=drag]", `${ALT}↑ / ${ALT}↓`],
-    ["[data-act=parent]", "P"],
+    ["[data-act=parent]", ALT + "P"],
     ["[data-act=up]", ALT + "↑"],
     ["[data-act=down]", ALT + "↓"],
-    ["[data-act=duplicate]", MOD + "D"],
-    ["[data-act=remove]", MAC ? "⌫" : "Delete"],
+    ["[data-act=duplicate]", ALT + "D"],
+    ["[data-act=source]", ALT + "H"],
+    ["[data-act=remove]", ALT + (MAC ? "⌫" : "Delete")],
     [".primary.save, .primary.apply, .savec, .go", MOD + "↵"],
     [".cancel, .panel > .x", "Esc"],
   ];
@@ -1898,6 +1904,21 @@ ${lib}<script>
     $(".agentp .model").value = agInfo.model || "";
     $(".agentp .key").value = "";
     $(".agentp .cmd").value = agInfo.command || "";
+    // Agent CLIs found on this computer: one click fills the command.
+    const found = $(".agentp .found");
+    found.innerHTML = "";
+    for (const d of agInfo.detected || []) {
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.textContent = d.name;
+      b.dataset.tip = d.command;
+      b.onclick = (e) => {
+        e.preventDefault();
+        $(".agentp .cmd").value = d.command;
+        root.querySelector('.agentp input[value="command"]').checked = true;
+      };
+      found.appendChild(b);
+    }
   };
   const agLoad = async () => {
     agInfo = await api("GET", "/agent");
@@ -2184,19 +2205,22 @@ ${lib}<script>
         e.preventDefault();
         return actions[e.key === "ArrowUp" ? "up" : "down"]();
       }
-      const plainKey = !e.metaKey && !e.ctrlKey && !e.altKey;
-      const k = e.key.toLowerCase();
-      if (k === "e" && plainKey) editMode ? done() : setMode(true);
-      else if (k === "a" && plainKey) {
+      // hotedit's own shortcuts are all ⌥/Alt + key (by physical key, as ⌥
+      // changes the character on a Mac), so plain keys never do anything
+      // surprising and typing is never affected.
+      const alt = e.altKey && !e.metaKey && !e.ctrlKey;
+      const k = alt ? (/^Key([A-Z])$/.exec(e.code) || [])[1] : null;
+      const blockKey = { S: "style", I: "insert", P: "parent", D: "duplicate", H: "source" }[k];
+      if (k === "E") {
+        e.preventDefault();
+        editMode ? done() : setMode(true);
+      } else if (k === "A") {
         e.preventDefault();
         ag.style.display === "block" ? agShow(false) : openAgent(selected);
-      } else if (selected && editMode && plainKey && (k === "s" || k === "i" || k === "p")) {
+      } else if (selected && editMode && blockKey) {
         e.preventDefault();
-        bb.querySelector(`[data-act="${{ s: "style", i: "insert", p: "parent" }[k]}"]`).click();
-      } else if (selected && editMode && k === "d" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        menu.querySelector('[data-act="duplicate"]').click();
-      } else if (selected && editMode && (e.key === "Delete" || e.key === "Backspace")) {
+        (bb.querySelector(`[data-act="${blockKey}"]`) || menu.querySelector(`[data-act="${blockKey}"]`)).click();
+      } else if (selected && editMode && alt && (e.key === "Delete" || e.key === "Backspace")) {
         e.preventDefault();
         menu.querySelector('[data-act="remove"]').click();
       }

@@ -17,7 +17,7 @@ const pkg = require("../package.json");
 
 const USAGE = `hotedit ${pkg.version} — edit any HTML file in your browser; changes are saved into the file
 
-  hotedit report.html          open report.html for editing (press E, click text, type)
+  hotedit report.html          open report.html for editing (click ✎ Edit, click text, type)
   hotedit                      list the HTML files in this folder; click one to edit
   hotedit some/folder          the same, for another folder
   hotedit demo                 try it on a sample report (a throwaway copy; or --demo)

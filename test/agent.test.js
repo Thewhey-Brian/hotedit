@@ -229,6 +229,18 @@ test("a request about a selected element can't edit anything else", async () => 
   }
 });
 
+test("an agent CLI installed while hotedit runs is found next time ✨ opens", () => {
+  const bin = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "htmledit-bin-")), "codex");
+  process.env.HOTEDIT_CODEX_BIN = bin;
+  try {
+    assert.strictEqual(agent.status().providers.find((p) => p.id === "codex").available, false);
+    fs.writeFileSync(bin, "#!/bin/sh\n", { mode: 0o755 });
+    assert.strictEqual(agent.status().providers.find((p) => p.id === "codex").available, true);
+  } finally {
+    delete process.env.HOTEDIT_CODEX_BIN;
+  }
+});
+
 test("settings: key stays on disk (0600) and is never sent back", () => {
   const before = { ...agent.loadConfig() };
   try {

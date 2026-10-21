@@ -68,7 +68,7 @@ for (const f of samples) {
 test("<base href> pointing elsewhere does not break the overlay", async () => {
   const s = await open({ name: "b.html", html: `<!doctype html><head><base href="https://example.invalid/x/"></head><body><p>hello</p></body>` });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("body > p").click();
   await page.waitForFunction(() => window.__htmledit.selected && window.__htmledit.selected.isContentEditable);
   await page.keyboard.press("End");
@@ -84,7 +84,7 @@ test("a second tab reloads after the first saves (no lost updates)", async () =>
   await tab2.goto(s.srv.url);
   await tab2.waitForFunction(() => window.__htmledit);
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("#a").click();
   await page.waitForFunction(() => window.__htmledit.selected && window.__htmledit.selected.isContentEditable);
   await page.keyboard.press("End");

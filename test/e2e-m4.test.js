@@ -51,7 +51,7 @@ test("plotly.py chart: edit title + trace colour, live preview, minimal save", a
   const s = await open({ fixture: "plotly_report.html" });
   const { page } = s;
   await page.waitForFunction(() => document.getElementById("3f1c2a").data);
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator('[id="3f1c2a"]').click({ position: { x: 300, y: 150 } });
   await opened(page);
@@ -82,7 +82,7 @@ test("hand-written plotly with variables: rename series", async () => {
   const s = await open({ fixture: "plotly_report.html" });
   const { page } = s;
   await page.waitForFunction(() => document.getElementById("bars").data);
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator("#bars").click({ position: { x: 300, y: 150 } });
   await opened(page);
@@ -108,7 +108,7 @@ test("plotly: changing a y value in the full spec redraws the bar", async () => 
           .getBoundingClientRect().height,
     );
   const before = await height();
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator("#bars").click({ position: { x: 300, y: 150 } });
   await opened(page);
@@ -135,7 +135,7 @@ test("chart.js: labels, dataset colour and title via fields; functions preserved
   await page.waitForFunction(
     () => window.Chart && Chart.getChart(document.getElementById("scores")),
   );
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator("#scores").click();
   await opened(page);
@@ -164,7 +164,7 @@ test("vega-lite: edit full JSON spec (add a row), live re-embed, saved", async (
   const s = await open({ fixture: "vega_report.html" });
   const { page } = s;
   await page.waitForSelector("#vis svg");
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator("#vis").click();
   await opened(page);
@@ -191,7 +191,7 @@ test("mermaid: edit diagram source, preview renders, raw source saved", async ()
   const s = await open({ fixture: "mermaid_report.html" });
   const { page } = s;
   await page.waitForSelector("pre.mermaid svg");
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator("pre.mermaid").click();
   await opened(page);
@@ -222,7 +222,7 @@ test("cancel after preview restores the original chart", async () => {
   await page.waitForFunction(
     () => window.Chart && Chart.getChart(document.getElementById("scores")),
   );
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator("#scores").click();
   await opened(page);
@@ -248,7 +248,7 @@ test("chart form: dropdown + checkbox + data row on a Plotly bar chart", async (
   const s = await open({ fixture: "plotly_report.html" });
   const { page } = s;
   await page.waitForFunction(() => document.getElementById("bars").data);
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator("#bars").click({ position: { x: 300, y: 150 } });
   await opened(page);
@@ -284,7 +284,7 @@ test("chart form: Chart.js type tile re-creates the chart, keeps callbacks", asy
   const s = await open({ fixture: "chartjs_report.html" });
   const { page } = s;
   await page.waitForFunction(() => window.Chart && Chart.getChart(document.getElementById("scores")));
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator("#scores").click();
   await opened(page);
@@ -318,7 +318,7 @@ test("chart form: Vega-Lite mark tile", async () => {
   const s = await open({ fixture: "vega_report.html" });
   const { page } = s;
   await page.waitForSelector("#vis svg");
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator("#vis").click();
   await opened(page);
@@ -335,7 +335,7 @@ test("chart type tiles: switch live through bar → pie → area and back writes
   const s = await open({ fixture: "chartjs_report.html" });
   const { page } = s;
   await page.waitForFunction(() => window.Chart && Chart.getChart(document.getElementById("scores")));
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.waitForTimeout(200);
   await page.locator("#scores").click();
   await opened(page);

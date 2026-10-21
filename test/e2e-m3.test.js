@@ -42,7 +42,7 @@ const select = async (page, sel) => {
 test("style panel writes only the changed properties into the source style", async () => {
   const s = await open({ name: "p.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await select(page, ".note");
   await page.keyboard.press("Escape"); // leave text editing, keep selection
   await act(page, "style");
@@ -70,7 +70,7 @@ test("style panel writes only the changed properties into the source style", asy
 test("style panel cancel restores the live element and writes nothing", async () => {
   const s = await open({ name: "p.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await select(page, "h1");
   await act(page, "style");
   await ui(page, '.sty [data-p="font-size"]').fill("77px");
@@ -87,7 +87,7 @@ test("style panel cancel restores the live element and writes nothing", async ()
 test("move, duplicate, delete, hide list items", async () => {
   const s = await open({ name: "p.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await select(page, "li:nth-child(3)");
   await act(page, "up");
   assert.ok(
@@ -143,7 +143,7 @@ test("move, duplicate, delete, hide list items", async () => {
 test("parent selection then move a whole card", async () => {
   const s = await open({ name: "p.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await select(page, ".card p");
   await page.keyboard.press("Escape");
   await act(page, "parent");
@@ -200,7 +200,7 @@ test("image swap: inline data URI stays inline", async () => {
   const { page } = s;
   const pic = path.join(s.dir, "new.png");
   fs.writeFileSync(pic, png(4, 3));
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await select(page, "img");
   const chooser = page.waitForEvent("filechooser");
   await act(page, "image");
@@ -220,7 +220,7 @@ test("image swap on a real report writes a sibling asset file", async () => {
   const { page } = s;
   const pic = path.join(s.dir, "fig new.png");
   fs.writeFileSync(pic, png(8, 8));
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("img").first().click({ force: true });
   const chooser = page.waitForEvent("filechooser");
   await act(page, "image");
@@ -246,7 +246,7 @@ test("image swap on a real report writes a sibling asset file", async () => {
 test("link URL edit patches only href", async () => {
   const s = await open({ name: "p.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await select(page, "a");
   await page.keyboard.press("Escape");
   await act(page, "link");

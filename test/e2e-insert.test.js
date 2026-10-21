@@ -35,7 +35,7 @@ const freshSelected = (page, sel) =>
 test("caret lands where you click, so typing goes there", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   const p = page.locator("#p1");
   // Click just right of "beta" (the end of the second word).
   const box = await p.evaluate((el) => {
@@ -61,7 +61,7 @@ test("caret lands where you click, so typing goes there", async () => {
 test("＋ menu: insert a paragraph below, placeholder selected, type to replace", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("h1").click();
   await editing(page);
   await page.keyboard.press("Escape");
@@ -86,7 +86,7 @@ test("＋ menu: insert a paragraph below, placeholder selected, type to replace"
 test("＋ menu: insert above and inside a box", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator(".card p").click();
   await editing(page);
   await page.keyboard.press("Escape");
@@ -112,7 +112,7 @@ test("＋ menu: insert above and inside a box", async () => {
 test("Enter at the end of a list item starts a new item", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("li").nth(1).click();
   await editing(page);
   await page.keyboard.press("Meta+ArrowRight");
@@ -135,7 +135,7 @@ test("Enter at the end of a list item starts a new item", async () => {
 test("＋ menu on a list item: list item first; a table goes after the list", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("li").first().click();
   await editing(page);
   await page.keyboard.press("Escape");
@@ -160,7 +160,7 @@ test("＋ menu on a list item: list item first; a table goes after the list", as
 test("Esc on an untouched new block takes the insert back", async () => {
   const s = await open({ name: "t.html", html: PAGE });
   const { page } = s;
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("h1").click();
   await editing(page);
   await page.keyboard.press("Escape");
@@ -178,7 +178,7 @@ test("insert a chart: Plotly template, chart panel opens, edit saves", async () 
   const s = await open({ fixture: "plotly_report.html" });
   const { page } = s;
   await page.waitForFunction(() => document.getElementById("bars").data);
-  await page.keyboard.press("e");
+  await page.keyboard.press("Alt+KeyE");
   await page.locator("h2").click();
   await editing(page);
   await page.keyboard.press("Escape");
