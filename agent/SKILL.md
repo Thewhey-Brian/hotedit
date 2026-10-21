@@ -1,11 +1,11 @@
 ---
-name: htmledit
-description: Use whenever you generate an HTML report, dashboard or page for the user, so they can edit it by hand afterwards (text, styles, layout, charts) with htmledit, and whenever the user mentions htmledit, editing an HTML file in the browser, or the notes/comments they left in one.
+name: hotedit
+description: Use whenever you generate an HTML report, dashboard or page for the user, so they can edit it by hand afterwards (text, styles, layout, charts) with hotedit, and whenever the user mentions hotedit, editing an HTML file in the browser, or the notes/comments they left in one.
 ---
 
-# htmledit: HTML reports that people can edit
+# hotedit: HTML reports that people can edit
 
-The user edits HTML in the browser with **htmledit**. They click text and type, restyle and
+The user edits HTML in the browser with **hotedit**. They click text and type, restyle and
 drag blocks around, and tweak charts in a form. Every change is saved back into the file as
 a small patch. Anything bigger, they leave as a 💬 note for you.
 
@@ -13,7 +13,7 @@ a small patch. Anything bigger, they leave as a 💬 note for you.
 
 - **Put text in the HTML**, not in JavaScript that builds the page. Text inside `<h2>`,
   `<p>`, `<li>`, `<td>` and so on is directly editable; text produced by script is not.
-- **Write chart specs as literals in an inline `<script>`.** htmledit can then edit titles,
+- **Write chart specs as literals in an inline `<script>`.** hotedit can then edit titles,
   labels, colours, axes and data in a form:
   - Plotly: `Plotly.newPlot('id', [{x: [...], y: [...], type: 'bar'}], {title: {text: '…'}})`
   - Chart.js: `new Chart(document.getElementById('id'), {type: 'bar', data: {...}, options: {...}})`
@@ -31,7 +31,7 @@ a small patch. Anything bigger, they leave as a 💬 note for you.
 After writing `report.html`, tell the user how to open it:
 
 ```bash
-npx htmledit report.html   # or `htmledit report.html` if installed
+npx hotedit report.html   # or `hotedit report.html` if installed
 ```
 
 Then: press **E**, click any text to edit, and select a block for its toolbar (＋ add, Aa
@@ -43,16 +43,16 @@ a browser and keeps a server running.
 When the user mentions notes or comments, or asks you to "check the report":
 
 ```bash
-htmledit comments report.html            # open notes as markdown: request, quoted text, line, CSS path, source snippet
-htmledit comments report.html --json     # the same, machine-readable (`at` = element id, `line` = current line)
-htmledit comments report.html --wait --timeout 1800   # wait for the next note
+hotedit comments report.html            # open notes as markdown: request, quoted text, line, CSS path, source snippet
+hotedit comments report.html --json     # the same, machine-readable (`at` = element id, `line` = current line)
+hotedit comments report.html --wait --timeout 1800   # wait for the next note
 ```
 
 For each note:
 
 1. Edit the HTML file to do what it asks. Small, targeted edits are best: the user's other
    hand edits are in the file too, and the open editor reloads live.
-2. Run `htmledit comments report.html --resolve <id> --note "<what you did>"`.
+2. Run `hotedit comments report.html --resolve <id> --note "<what you did>"`.
 
-Never edit `.htmledit/*.comments.json` by hand; always use the CLI. If `htmledit` isn't on
-the PATH, use `npx htmledit comments …`.
+Never edit `.htmledit/*.comments.json` by hand; always use the CLI. If `hotedit` isn't on
+the PATH, use `npx hotedit comments …`.

@@ -1,4 +1,4 @@
-// `htmledit` with no file: a local page listing the HTML files in a folder.
+// `hotedit` with no file: a local page listing the HTML files in a folder.
 // Clicking one starts an editing session for it (one per file, reused).
 "use strict";
 const fs = require("fs");
@@ -72,9 +72,9 @@ function page(dir, files, token) {
             `<a class="f" href="/open?t=${token}&amp;f=${encodeURIComponent(f.rel)}"><span class="n">${esc(f.rel)}</span><span class="m">${size(f.size)} · ${ago(f.mtime)}</span></a>`,
         )
         .join("\n")
-    : `<p class="empty">No HTML files in this folder. Run <code>htmledit path/to/report.html</code>, or start htmledit in the folder that holds your reports.</p>`;
+    : `<p class="empty">No HTML files in this folder. Run <code>hotedit path/to/report.html</code>, or start hotedit in the folder that holds your reports.</p>`;
   return `<!doctype html>
-<html><head><meta charset="utf-8"><title>htmledit</title>
+<html><head><meta charset="utf-8"><title>hotedit</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   body { font: 15px/1.5 -apple-system, system-ui, sans-serif; margin: 0; background: #fafafa; color: #18181b; }
@@ -140,7 +140,7 @@ async function startLauncher(dir, { port = 0, host = "127.0.0.1" } = {}) {
       res.writeHead(e.code || 500, {
         "Content-Type": "text/plain; charset=utf-8",
       });
-      res.end("htmledit: " + e.message);
+      res.end("hotedit: " + e.message);
     }
   });
   const stop = async () => {

@@ -43,4 +43,4 @@ editor, `src/charts.js` and `src/chartform.js` handle charts, `src/comments.js` 
 notes, and `src/launcher.js` is the file picker.
 
 The only runtime dependencies are `parse5` and `entities`, and they should stay that
-small. `htmledit` must keep working via `npx` with no build step.
+small. `hotedit` must keep working via `npx` with no build step.

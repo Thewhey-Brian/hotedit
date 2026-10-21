@@ -1,6 +1,6 @@
 # Architecture
 
-How htmledit turns a browser edit into a minimal patch on the original file.
+How hotedit turns a browser edit into a minimal patch on the original file.
 
 ## Core design
 
@@ -52,7 +52,7 @@ How htmledit turns a browser edit into a minimal patch on the original file.
   line) → text match → CSS path → "anchor lost". Overlay: 💬 in the block bar
   (quotes the selected text), numbered pins at the end of the anchored text,
   list with Go to / Resolve / Delete, "Copy for agent" (markdown). CLI:
-  `htmledit comments f.html [--json] [--all] [--wait [--timeout s]]
+  `hotedit comments f.html [--json] [--all] [--wait [--timeout s]]
   [--resolve id [--note t]] [--clear-resolved]`; the server watches the
   sidecar so CLI resolves update pins live.
 
@@ -71,5 +71,5 @@ How htmledit turns a browser edit into a minimal patch on the original file.
 - Changed text keeps the source spelling of its unchanged start and end
   (`reuseText`: entities, `&nbsp;`, CRLF), and the newline the parser drops after
   `<pre>` is accounted for (`textRange`).
-- `src/launcher.js`: `htmledit` with no file lists the folder's HTML files and
+- `src/launcher.js`: `hotedit` with no file lists the folder's HTML files and
   starts one session per clicked file (token-guarded `/open`).

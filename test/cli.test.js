@@ -17,7 +17,7 @@ const run = (args, opts = {}) =>
 test("--help and --version", () => {
   assert.match(
     run(["--help"]),
-    /htmledit report\.html\s+open report\.html for editing/,
+    /hotedit report\.html\s+open report\.html for editing/,
   );
   assert.strictEqual(
     run(["--version"]).trim(),
@@ -35,18 +35,18 @@ test("clear error for a missing file", () => {
   }
 });
 
-test("skill install --project writes .claude/skills/htmledit/SKILL.md", () => {
+test("skill install --project writes .claude/skills/hotedit/SKILL.md", () => {
   const dir = tmp();
   const out = run(["skill", "install", "--project"], { cwd: dir });
-  const f = path.join(dir, ".claude", "skills", "htmledit", "SKILL.md");
+  const f = path.join(dir, ".claude", "skills", "hotedit", "SKILL.md");
   assert.ok(fs.existsSync(f), out);
   assert.match(
     fs.readFileSync(f, "utf8"),
-    /^---\nname: htmledit\ndescription: /,
+    /^---\nname: hotedit\ndescription: /,
   );
   assert.match(
     run(["skill", "print"]),
-    /# htmledit: HTML reports that people can edit/,
+    /# hotedit: HTML reports that people can edit/,
   );
 });
 
@@ -127,7 +127,8 @@ test(
       ["install", "--omit=dev", "--no-audit", "--no-fund", path.join(dir, tgz)],
       { cwd: dir, stdio: "ignore" },
     );
-    const bin = path.join(dir, "node_modules", ".bin", "htmledit");
+    const bin = path.join(dir, "node_modules", ".bin", "hotedit");
+  assert.ok(fs.existsSync(path.join(dir, "node_modules", ".bin", "htmledit")), "htmledit alias installed");
     assert.ok(
       !fs.existsSync(path.join(dir, "node_modules", "playwright")),
       "dev deps not installed",

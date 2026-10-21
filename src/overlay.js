@@ -150,7 +150,7 @@
   <button class="undo" title="Undo the last saved change (⌘Z)">↶</button>
   <button class="redo" title="Redo (⇧⌘Z)">↷</button>
   <button class="cbtn" title="Notes for your AI agent">💬 0</button>
-  <span class="status">htmledit</span>
+  <span class="status">hotedit</span>
 </div>
 <div class="hint">
   <b>Edit this page</b>
@@ -1609,7 +1609,7 @@ ${lib}<script>
       await navigator.clipboard.writeText(markdown);
       say("copied — paste into your coding agent");
     } catch {
-      say("clipboard blocked; run: htmledit comments <file>", true);
+      say("clipboard blocked; run: hotedit comments <file>", true);
     }
   };
   const addComment = (el) => {
@@ -1653,7 +1653,7 @@ ${lib}<script>
       select(null);
       showHover(null);
     }
-    say(on ? "Click text to type · click a block for tools" : "htmledit");
+    say(on ? "Click text to type · click a block for tools" : "hotedit");
   };
   editBtn.onclick = () => setMode(!editMode);
   const history = async (which) => {

@@ -1,7 +1,7 @@
 {
-  "name": "htmledit",
+  "name": "hotedit",
   "version": "0.1.0",
-  "description": "Edit any HTML file in your browser — text, styles, layout, charts — and save the changes back into the file as small, clean patches. Built for AI-generated reports.",
+  "description": "Edit any HTML file in your browser \u2014 text, styles, layout, charts \u2014 and save the changes back into the file as small, clean patches. Built for AI-generated reports.",
   "keywords": [
     "html",
     "editor",
@@ -31,6 +31,7 @@
   "type": "commonjs",
   "main": "src/server.js",
   "bin": {
+    "hotedit": "bin/htmledit.js",
     "htmledit": "bin/htmledit.js"
   },
   "files": [

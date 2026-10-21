@@ -161,7 +161,7 @@ function markdown(file, doc, { all = false } = {}) {
   const name = path.basename(file);
   if (!list.length) return `No ${all ? "" : "open "}comments on ${name}.\n`;
   let out = `# Comments on ${name} (${list.length} ${all ? "total" : "open"})\n\n`;
-  out += `Edit \`${file}\` to address each comment, then run \`htmledit comments ${name} --resolve <id>\`.\n\n`;
+  out += `Edit \`${file}\` to address each comment, then run \`hotedit comments ${name} --resolve <id>\`.\n\n`;
   for (const c of list) {
     const where = c.line
       ? `line ${c.line}`
