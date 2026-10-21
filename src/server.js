@@ -291,7 +291,12 @@ function createServer(session) {
       const patches = charts.patchChart(session.doc, body.index, body.values);
       return session.write(applyPatches(session.src, patches), "chart");
     },
-    "GET /agent": () => ({ ...agent.status(), job: session.job ? session.job.snapshot() : null }),
+    "GET /agent": () => ({
+      ...agent.status(),
+      job: session.job ? session.job.snapshot() : null,
+      jobs: (session.jobs || []).map((j) => j.snapshot()),
+    }),
+    "POST /agent/new": () => agent.newChat(session),
     "POST /agent/config": (q, b) => {
       const patch = {};
       if (b.provider !== undefined) patch.provider = b.provider;

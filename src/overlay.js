@@ -113,7 +113,7 @@
   .aibtn { background: linear-gradient(135deg, #7c3aed, #2563eb); }
   .aibtn:hover { background: linear-gradient(135deg, #8b5cf6, #3b82f6); }
   .agentp { right: 12px; bottom: 12px; width: 360px; max-height: calc(100vh - 80px); overflow: auto; }
-  .agentp textarea { height: 76px; font: 13px/1.4 -apple-system, system-ui, sans-serif; resize: vertical; }
+  .agentp textarea { height: 64px; font: 13px/1.4 -apple-system, system-ui, sans-serif; resize: vertical; }
   .agentp .scope { display: flex; gap: 6px; align-items: center; margin: 0 0 8px; color: #a1a1aa; font-size: 12px; }
   .agentp .pick { margin: -4px 0 8px; font-size: 11.5px; }
   .agentp .scope .about { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -121,8 +121,21 @@
   .agentp .row { flex-wrap: wrap; }
   .agentp .gear { margin-right: auto; background: transparent; color: #a1a1aa; padding: 5px 6px; }
   .agentp .gear:hover { color: #fafafa; }
-  .agentp .log { margin-top: 10px; font-size: 12.5px; line-height: 1.45; display: none; border-top: 1px solid #27272a; padding-top: 8px; }
-  .agentp .log .q { color: #a1a1aa; font-style: italic; margin-bottom: 4px; }
+  .agentp .newchat { position: absolute; top: 8px; right: 40px; padding: 3px 8px; font-size: 12px; background: transparent; color: #a1a1aa; display: none; }
+  .agentp .newchat:hover { color: #fafafa; background: #3f3f46; }
+  .agentp .log { font-size: 12.5px; line-height: 1.45; display: none; max-height: min(46vh, 420px); overflow: auto;
+    margin: 0 -14px 0; padding: 0 14px 4px; overscroll-behavior: contain; }
+  .agentp .log .turn + .turn { margin-top: 12px; padding-top: 10px; border-top: 1px solid #27272a; }
+  .agentp .log .q { margin: 0 0 6px auto; width: fit-content; max-width: 88%; padding: 6px 10px; border-radius: 12px 12px 4px 12px;
+    background: #2563eb; color: #fff; white-space: pre-wrap; }
+  .agentp .log .on { text-align: right; color: #71717a; font-size: 11px; margin: -3px 0 6px; }
+  .agentp .log .meta { color: #71717a; font-size: 11px; margin-top: 4px; }
+  .agentp .after { margin-top: 6px; }
+  .agentp .after button { padding: 4px 9px; font-size: 12px; }
+  .agentp .ask { border-top: 1px solid #27272a; margin: 8px -14px 0; padding: 10px 14px 0; }
+  .agentp .ask.first { border-top: 0; margin-top: 0; padding-top: 0; }
+  .agentp .ask .row { margin-top: 8px; }
+  .agentp .gear .mdl { color: #71717a; }
   .agentp .log .tool, .agentp .log .undo { color: #71717a; }
   .agentp .log .edit { color: #4ade80; }
   .agentp .log .error { color: #f87171; }
@@ -302,15 +315,16 @@
 </div>
 <div class="panel agentp">
   <button class="x" title="Close">✕</button>
+  <button class="newchat" title="Start a new chat (earlier requests are forgotten, their changes stay)">New chat</button>
   <h4>✨ Ask AI</h4>
+  <div class="log"></div>
+  <div class="row after"><button class="undoai" title="Take back what the AI changed in the last request">↶ Undo AI changes</button><button class="stop">■ Stop</button></div>
   <div class="ask">
     <div class="scope"><span class="about"></span><button class="whole" title="Let the AI change the whole page">Whole page</button></div>
     <p class="msg pick">Click any block to point the AI at just that block.</p>
     <textarea spellcheck="true" placeholder="What should change? e.g. “Make this shorter and friendlier”, “Turn the bars orange”, “Add a row for March”"></textarea>
-    <div class="row"><button class="gear" title="Choose which AI edits the page">⚙ Connect</button><button class="primary go" title="Start">Do it</button></div>
+    <div class="row"><button class="gear" title="Choose which AI edits the page">⚙ Connect</button><button class="primary go" title="Send">Do it</button></div>
   </div>
-  <div class="log"></div>
-  <div class="row after"><button class="undoai">↶ Undo AI changes</button><button class="stop">■ Stop</button></div>
   <div class="conn">
     <p class="msg">Pick the AI that edits this page. It changes the page live and every change can be undone.</p>
     <label class="opt"><input type="radio" name="he-prov" value="claude"><b>Claude Code</b><span class="d" data-d="claude"></span>
@@ -857,7 +871,7 @@
     if (!label && !key) return;
     tipFor = b;
     tipTimer = setTimeout(() => {
-      if (tipFor !== b || !b.isConnected) return;
+      if (tipFor !== b || !b.isConnected || !b.getClientRects().length) return;
       tip.textContent = label;
       if (key) tip.insertAdjacentHTML("beforeend", `<kbd>${key}</kbd>`);
       tip.style.display = "block";
@@ -873,6 +887,7 @@
     if (tipFor && !tipFor.contains(e.relatedTarget)) hideTip();
   });
   root.addEventListener("pointerdown", hideTip, true);
+  root.addEventListener("keydown", hideTip, true);
 
   // Style panel: prefilled from the SOURCE style attribute, previews live,
   // sends only changed properties so runtime styles never reach the file.
@@ -1872,9 +1887,11 @@ ${lib}<script>
   const ag = $(".agentp");
   const agTa = $(".agentp textarea");
   const agLog = $(".agentp .log");
+  agTa.dataset.first = agTa.placeholder;
   let agTarget = null; // element the request is about (null = whole page)
   let agInfo = null;
   let agJob = null;
+  let agJobs = []; // this chat: earlier requests, oldest first
   const agShow = (on) => {
     ag.style.display = on ? "block" : "none";
     sessionStorage.setItem("he-ai", on ? "1" : "0");
@@ -1891,8 +1908,10 @@ ${lib}<script>
   const agConn = (on) => {
     $(".agentp .conn").style.display = on ? "block" : "none";
     $(".agentp .ask").style.display = on ? "none" : "block";
-    if (on) agLog.style.display = "none";
-    else agRender();
+    if (on) {
+      agLog.style.display = "none";
+      $(".agentp .after").style.display = $(".agentp .newchat").style.display = "none";
+    } else agRender();
     if (!on || !agInfo) return;
     for (const p of agInfo.providers) {
       const d = $(`.agentp .d[data-d="${p.id}"]`);
@@ -1920,35 +1939,71 @@ ${lib}<script>
       found.appendChild(b);
     }
   };
+  // "claude-opus-5-5" → "Opus 5.5"; other ids are shown as they are.
+  const modelName = (m) => {
+    const c = /^(?:claude-)?(opus|sonnet|haiku|fable)-(\d+)(?:[-.](\d{1,2}))?(?!\d)/i.exec(m || "");
+    return c ? `${c[1][0].toUpperCase()}${c[1].slice(1).toLowerCase()} ${c[2]}${c[3] ? "." + c[3] : ""}` : m || "";
+  };
+  const provName = (id) => ((agInfo && agInfo.providers.find((x) => x.id === id)) || {}).name || "";
   const agLoad = async () => {
     agInfo = await api("GET", "/agent");
-    if (agInfo.job) agJob = agInfo.job;
-    const p = agInfo.providers.find((x) => x.id === agInfo.provider);
-    $(".agentp .gear").textContent = p ? `⚙ ${p.name}` : "⚙ Connect AI";
+    agJobs = agInfo.jobs || [];
+    agJob = agInfo.job;
+    agGear();
     return agInfo;
+  };
+  // The ⚙ button says which AI and which model will answer.
+  const agGear = () => {
+    const g = $(".agentp .gear");
+    const name = provName(agInfo && agInfo.provider);
+    const m = agJob && agJob.provider === agInfo.provider && agJob.model ? agJob.model : agInfo.uses;
+    g.textContent = name ? `⚙ ${name}` : "⚙ Connect AI";
+    if (name) {
+      const s = document.createElement("span");
+      s.className = "mdl";
+      s.textContent = ` · ${modelName(m) || "default model"}`;
+      g.appendChild(s);
+    }
+    g.removeAttribute("title");
+    g.dataset.tip = name ? `Uses ${name}${m ? ` with ${m}` : " with its default model"}. Click to change` : "Choose which AI edits the page";
   };
   const agRender = () => {
     const j = agJob;
+    if (j) agJobs = [...agJobs.filter((x) => x.id !== j.id), j];
     const running = j && j.status === "running";
-    agLog.style.display = j ? "block" : "none";
-    agTa.disabled = !!running;
+    const busy = agLog.scrollHeight - agLog.scrollTop - agLog.clientHeight < 40;
+    agLog.style.display = agJobs.length ? "block" : "none";
+    $(".agentp .ask").classList.toggle("first", !agJobs.length);
+    $(".agentp .pick").style.display = agJobs.length ? "none" : "";
+    $(".agentp .newchat").style.display = agJobs.length && !running ? "block" : "none";
+    agTa.placeholder = agJobs.length ? "Ask a follow-up, or click another block…" : agTa.dataset.first;
+    $(".agentp .go").textContent = agJobs.length ? "Send" : "Do it";
     $(".agentp .go").style.display = running ? "none" : "";
     $(".agentp .stop").style.display = running ? "" : "none";
     $(".agentp .undoai").style.display = j && !running && j.edits > 0 ? "" : "none";
     $(".agentp .after").style.display = running || (j && j.edits > 0) ? "" : "none";
-    if (!j) return;
+    if (agInfo) agGear();
     agLog.innerHTML = "";
-    const add = (cls, text) => {
-      const d = document.createElement("div");
-      d.className = cls;
-      d.textContent = text;
-      agLog.appendChild(d);
-    };
-    add("q", "“" + j.prompt + "”");
-    for (const e of j.log) add(e.t, e.t === "edit" ? "✓ " + e.s : e.t === "tool" ? "· " + e.s : e.s);
-    if (running) add("tool working", "Working");
-    else if (j.status === "done") add("tool", j.edits ? `Done · ${j.edits} change${j.edits > 1 ? "s" : ""} saved` : "Done · no changes");
-    else if (j.status === "stopped") add("tool", "Stopped");
+    for (const t of agJobs) {
+      const turn = document.createElement("div");
+      turn.className = "turn";
+      const add = (cls, text) => {
+        const d = document.createElement("div");
+        d.className = cls;
+        d.textContent = text;
+        turn.appendChild(d);
+      };
+      add("q", t.prompt);
+      const el = t.target != null && document.querySelector(`[data-he="${t.target}"]`);
+      add("on", t.target == null ? "whole page" : `on ${el ? nameOf(el) : "a block"}`);
+      for (const e of t.log) add(e.t, e.t === "edit" ? "✓ " + e.s : e.t === "tool" ? "· " + e.s : e.s);
+      if (t.status === "running") add("tool working", "Working");
+      const who = [provName(t.provider), modelName(t.model)].filter(Boolean).join(" · ");
+      const end = t.status === "done" ? (t.edits ? `${t.edits} change${t.edits > 1 ? "s" : ""} saved` : "no changes") : t.status === "stopped" ? "stopped" : t.status === "error" ? "failed" : "";
+      add("meta", [end, who].filter(Boolean).join(" · "));
+      agLog.appendChild(turn);
+    }
+    if (busy || running) agLog.scrollTop = agLog.scrollHeight;
   };
   // One panel at a time: an open style/chart/HTML panel is saved (as Done
   // would) so the AI's live updates aren't held back behind it.
@@ -2014,6 +2069,7 @@ ${lib}<script>
   $(".agentp .go").onclick = async () => {
     const prompt = agTa.value.trim();
     if (!prompt) return agTa.focus();
+    if (agJob && agJob.status === "running") return say("The AI is still working on the last request", true);
     if (agInfo && !agInfo.provider) return agConn(true);
     if (editing) await finish(true);
     if (!(await saveOpenPanel())) return;
@@ -2026,6 +2082,17 @@ ${lib}<script>
       agRender();
     } catch (e) {
       if (/Connect an AI/.test(e.message)) return agConn(true);
+      say(e.message, true);
+    }
+  };
+  $(".agentp .newchat").onclick = async () => {
+    try {
+      await api("POST", "/agent/new");
+      agJob = null;
+      agJobs = [];
+      agRender();
+      agTa.focus();
+    } catch (e) {
       say(e.message, true);
     }
   };

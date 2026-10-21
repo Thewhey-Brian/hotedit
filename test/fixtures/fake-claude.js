@@ -10,6 +10,8 @@ if (process.env.FAKE_FAIL === "login") {
   out({ type: "result", is_error: true, result: "Not logged in · Please run /login" });
   process.exit(1);
 }
+if (process.env.FAKE_PROMPT_FILE) require("fs").appendFileSync(process.env.FAKE_PROMPT_FILE, args[args.indexOf("-p") + 1] + "\n----\n");
+out({ type: "system", subtype: "init", model: "claude-opus-5-5" });
 const cfg = JSON.parse(args[args.indexOf("--mcp-config") + 1]).mcpServers.hotedit;
 const allowed = args[args.indexOf("--allowedTools") + 1];
 const p = spawn(cfg.command, cfg.args, { env: { ...process.env, ...cfg.env } });

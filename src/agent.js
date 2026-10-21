@@ -327,6 +327,46 @@ const PRESETS = [
   { name: "Cursor", bin: "cursor-agent", command: "cursor-agent -p --output-format text --force" },
 ];
 
+// Which model each provider will use, as far as we can tell before a run:
+// the model set in ⚙, the CLI's own config, or what its last run reported.
+const seen = {};
+function readText(f) {
+  try {
+    return fs.readFileSync(f, "utf8");
+  } catch {
+    return "";
+  }
+}
+function modelFlag(cmd) {
+  const w = words(cmd || "");
+  for (let i = 1; i < w.length; i++) {
+    const m = /^--?(?:m|model)(?:=(.+))?$/.exec(w[i]);
+    if (m) return m[1] || w[i + 1] || "";
+  }
+  return "";
+}
+function modelFor(id, cfg = loadConfig()) {
+  if (id === "command") return modelFlag(cfg.command);
+  if (cfg.model) return cfg.model;
+  if (id === "api") return "claude-opus-5-5";
+  if (seen[id]) return seen[id];
+  if (id === "claude") {
+    if (process.env.ANTHROPIC_MODEL) return process.env.ANTHROPIC_MODEL;
+    try {
+      return JSON.parse(readText(path.join(os.homedir(), ".claude", "settings.json")) || "{}").model || "";
+    } catch {
+      return "";
+    }
+  }
+  if (id === "codex") {
+    const toml = readText(path.join(process.env.CODEX_HOME || path.join(os.homedir(), ".codex"), "config.toml"));
+    const top = toml.split(/^\s*\[/m)[0];
+    const m = /^\s*model\s*=\s*["']([^"']+)["']/m.exec(top);
+    return m ? m[1] : "";
+  }
+  return "";
+}
+
 // What the browser may know: never the key itself.
 function status() {
   const cfg = loadConfig();
@@ -342,6 +382,7 @@ function status() {
   return {
     provider,
     model: cfg.model || "",
+    uses: provider ? modelFor(provider, cfg) : "",
     command: cfg.command || "",
     detected: PRESETS.filter((x) => findOnPath(x.bin)).map(({ name, command }) => ({ name, command })),
     providers: [
@@ -389,9 +430,22 @@ const SYSTEM = `You edit an HTML page that a person has open in hotedit, a live 
 - If the request is unclear or impossible, say so instead of guessing.
 - Finish with one short plain sentence telling the person what you changed.`;
 
-function taskText(session, { prompt, target: id }) {
+// Earlier requests in this chat, so follow-ups ("make it bigger", "undo
+// that") make sense.
+function earlier(job) {
+  const turns = (job.before || []).slice(-6);
+  if (!turns.length) return "";
+  let t = "Earlier in this chat (already done; the page above is current):\n";
+  for (const j of turns) {
+    const reply = [...j.log].reverse().find((e) => e.t === "text" || e.t === "error");
+    t += `- Person: ${clip(j.prompt, 400)}\n  You: ${reply ? clip(reply.s, 400) : "(no reply)"} [${j.edits} change${j.edits === 1 ? "" : "s"}${j.status === "done" ? "" : ", " + j.status}]\n`;
+  }
+  return t + "\n";
+}
+
+function taskText(session, { prompt, target: id, before }) {
   const name = path.basename(session.file);
-  let t = `Page: ${name}\n\nRequest: ${prompt}\n`;
+  let t = `Page: ${name}\n\n${earlier({ before })}Request: ${prompt}\n`;
   if (id != null && session.doc.nodes[id])
     t += `\nThe person selected this element; change only it:\n${read(session.doc, id, { max: 20000 })}\n`;
   else t += "\nThe request is about the whole page.\n";
@@ -409,6 +463,9 @@ class Job {
     this.log = [];
     this.undoStart = session.undo.length;
     this.stopped = false;
+    this.provider = req.provider;
+    this.model = req.model || "";
+    this.before = (session.jobs || []).map((j) => j.snapshot());
   }
   snapshot() {
     return {
@@ -418,6 +475,8 @@ class Job {
       status: this.status,
       log: this.log,
       edits: this.session.undo.length - this.undoStart,
+      provider: this.provider,
+      model: this.model,
     };
   }
 }
@@ -455,6 +514,10 @@ async function runApi(job, cfg) {
     try {
       msg = await stream.finalMessage();
       jsonRetries = 0;
+      if (msg.model && msg.model !== job.model) {
+        job.model = msg.model;
+        job.session.broadcastJob();
+      }
     } catch (e) {
       if (job.stopped) return;
       if (e instanceof Anthropic.APIError || jsonRetries++ >= 2) throw e;
@@ -587,6 +650,7 @@ const CLIS = {
     },
     // stream-json: assistant messages with text and tool_use blocks.
     line(ev, job, s) {
+      if (ev.type === "system" && ev.subtype === "init" && ev.model) job.model = seen.claude = ev.model;
       if (ev.type === "assistant" && ev.message)
         for (const b of ev.message.content || []) {
           if (b.type === "text" && b.text.trim())
@@ -727,9 +791,12 @@ async function start(session, req) {
   const job = new Job(session, {
     prompt: String(req.prompt).trim(),
     id: req.id,
+    provider,
+    model: modelFor(provider, cfg),
   });
   if (req.client) job.client = req.client; // tests
   session.job = job;
+  session.jobs = [...(session.jobs || []), job].slice(-20);
   session.broadcastJob();
   const run = CLIS[provider] ? runCli(job, cfg, provider) : runApi(job, cfg);
   job.done = run
@@ -744,6 +811,15 @@ async function start(session, req) {
     )
     .then(() => session.broadcastJob());
   return job.snapshot();
+}
+
+// Start over: forget the earlier requests (their edits stay).
+function newChat(session) {
+  if (session.job && session.job.status === "running")
+    throw new Error("The AI is still working on the last request");
+  session.jobs = [];
+  session.job = null;
+  return { ok: true };
 }
 
 function stop(session) {
@@ -766,6 +842,7 @@ module.exports = {
   status,
   start,
   stop,
+  newChat,
   validate,
   SYSTEM,
   taskText,

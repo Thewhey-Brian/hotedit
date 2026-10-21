@@ -13,6 +13,8 @@ test("✨ panel: connect, ask about the selected block, live edit, undo", async 
   Object.assign(process.env, { HOTEDIT_CLAUDE_BIN: FAKE, FAKE_FIND: "Old title", FAKE_REPLACE: "New title", FAKE_DELAY: "300" });
   const s = await open({ name: "a.html", html: "<!doctype html><body>\n<h1>Old title</h1>\n<p>Some text here.</p>\n</body>\n" });
   const { page } = s;
+  const prompts = path.join(require("os").tmpdir(), `hotedit-prompts-${process.pid}.txt`);
+  require("fs").rmSync(prompts, { force: true });
   try {
     await page.keyboard.press("Alt+KeyE");
     await page.locator("h1").click();
@@ -36,13 +38,31 @@ test("✨ panel: connect, ask about the selected block, live edit, undo", async 
     assert.ok(s.read().includes("<h1>New title</h1>"));
     await page.waitForFunction(() => document.querySelector("htmledit-overlay").shadowRoot.querySelector(".flash").style.display === "block", null, { timeout: 3000 });
     await page.waitForFunction(() => /✓ Changed heading/.test(document.querySelector("htmledit-overlay").shadowRoot.querySelector(".agentp .log").textContent));
-    await page.waitForFunction(() => /Done · 1 change saved/.test(document.querySelector("htmledit-overlay").shadowRoot.querySelector(".agentp .log").textContent));
+    // Says which AI and which model answered.
+    await page.waitForFunction(() => /1 change saved · Claude Code · Opus 5\.5/.test(document.querySelector("htmledit-overlay").shadowRoot.querySelector(".agentp .log").textContent));
+    assert.match(await ui(page, ".agentp .gear").textContent(), /Claude Code · Opus 5\.5/);
+    // A follow-up: the chat stays above the box, and the AI hears what came before.
+    Object.assign(process.env, { FAKE_FIND: "New title", FAKE_REPLACE: "Short", FAKE_PROMPT_FILE: prompts });
+    await ui(page, ".agentp textarea").fill("Now make it shorter");
+    assert.strictEqual(await ui(page, ".agentp .go").textContent(), "Send");
+    await ui(page, ".agentp textarea").press("Meta+Enter");
+    await page.waitForFunction(() => document.querySelector("h1").textContent === "Short");
+    await page.waitForFunction(() => document.querySelector("htmledit-overlay").shadowRoot.querySelectorAll(".agentp .log .turn").length === 2);
+    const told = require("fs").readFileSync(prompts, "utf8");
+    assert.match(told, /Earlier in this chat[\s\S]*Person: Rename the heading[\s\S]*You: I made the change\.[\s\S]*Request: Now make it shorter/);
+    const box = async (sel) => ui(page, sel).evaluate((e) => e.getBoundingClientRect().top);
+    assert.ok((await box(".agentp .log")) < (await box(".agentp textarea")), "chat above the box");
     await page.screenshot({ path: path.join(require("os").tmpdir(), "hotedit-ai-panel.png") });
+    // Undo takes back the last request only.
     await Promise.all([page.waitForEvent("load"), ui(page, ".agentp .undoai").click()]);
-    assert.ok(await until(() => s.read() === s.orig));
-    await page.waitForFunction(() => window.__htmledit && document.querySelector("h1").textContent === "Old title");
+    assert.ok(await until(() => s.read().includes("<h1>New title</h1>")));
+    await page.waitForFunction(() => window.__htmledit && document.querySelector("h1").textContent === "New title");
+    // New chat forgets the earlier requests.
+    await page.waitForFunction(() => document.querySelector("htmledit-overlay").shadowRoot.querySelectorAll(".agentp .log .turn").length === 2);
+    await ui(page, ".agentp .newchat").click();
+    await page.waitForFunction(() => document.querySelector("htmledit-overlay").shadowRoot.querySelector(".agentp .log").style.display === "none");
   } finally {
-    for (const k of ["HOTEDIT_CLAUDE_BIN", "FAKE_FIND", "FAKE_REPLACE", "FAKE_DELAY"]) delete process.env[k];
+    for (const k of ["HOTEDIT_CLAUDE_BIN", "FAKE_FIND", "FAKE_REPLACE", "FAKE_DELAY", "FAKE_PROMPT_FILE"]) delete process.env[k];
     await s.close();
   }
 });

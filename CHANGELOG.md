@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- ✨ is now a chat: the conversation and the AI's progress are on top, the
+  box is at the bottom for follow-ups ("now make it shorter"), and the AI is
+  told what was asked and done earlier in the chat. **New chat** starts over
+  (earlier changes stay); *Undo AI changes* takes back the last request.
+- ✨ shows which AI and model answer (e.g. *Claude Code · Opus 5.5*, *Codex ·
+  gpt-…*), next to ⚙ and under every reply, as reported by the AI itself
+  when it can.
+
 ## 0.4.0 — 2026-10-21
 
 - ✨ works with more AIs: **Codex** (your ChatGPT login) next to Claude Code
