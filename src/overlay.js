@@ -61,7 +61,6 @@
   .grid label { color: #a1a1aa; font-size: 12px; }
   .pair { display: flex; gap: 6px; }
   h4 { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
-  .chartp { right: 12px; top: 60px; width: min(480px, 44vw); max-height: calc(100vh - 72px); overflow: auto; }
   .cmtp { right: 12px; top: 60px; width: 340px; }
   .ins { width: 312px; padding: 8px; }
   .ins .where { display: flex; gap: 4px; margin-bottom: 8px; }
@@ -81,33 +80,6 @@
     background: #f59e0b; color: #111; font: 600 11px/22px -apple-system, sans-serif; text-align: center;
     box-shadow: 0 2px 6px rgba(0,0,0,.3); }
   .pin:hover { background: #fbbf24; }
-  .chartp .grid { grid-template-columns: minmax(96px, 34%) 1fr; margin: 4px 0 6px; }
-  .chartp .grid label { overflow-wrap: anywhere; }
-  .chartp textarea { height: 52vh; }
-  .tabs { display: flex; gap: 4px; margin: 0 0 8px; }
-  .tabs button { padding: 4px 11px; font-size: 12px; }
-  .chartp details { border-top: 1px solid #27272a; padding: 2px 0; }
-  .chartp summary { cursor: pointer; font-weight: 600; font-size: 12px; padding: 6px 0; list-style: none; color: #e4e4e7; }
-  .chartp summary::-webkit-details-marker { display: none; }
-  .chartp summary::before { content: "▸ "; color: #71717a; }
-  .chartp details[open] > summary::before { content: "▾ "; }
-  .ctl { display: flex; gap: 6px; align-items: center; min-height: 30px; }
-  .ctl input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: #2563eb; }
-  .ctl input[type=range] { padding: 0; flex: 1; accent-color: #2563eb; }
-  .ctl .val { width: 40px; color: #a1a1aa; font: 12px ui-monospace, monospace; text-align: right; }
-  .ctl .code, .ctl .note { color: #a1a1aa; font-size: 12px; }
-  .ctl .code { color: #fbbf24; font-family: ui-monospace, monospace; }
-  .ctl .rst { padding: 2px 5px; background: transparent; color: #71717a; flex: none; }
-  .ctl .rst:hover { color: #fafafa; }
-  .dtw { max-height: 52vh; overflow: auto; margin: 4px 0 10px; }
-  table.dt { border-collapse: collapse; width: 100%; font-size: 12px; }
-  .dt th { color: #a1a1aa; font-weight: 500; text-align: left; padding: 3px 4px; position: sticky; top: 0; background: #18181b; }
-  .dt td { padding: 1px 2px; }
-  .dt td.n { color: #52525b; font: 11px ui-monospace, monospace; padding-right: 4px; }
-  .dt input { padding: 3px 5px; font: 12px ui-monospace, monospace; min-width: 60px; border-radius: 5px; }
-  .dt .del { padding: 2px 6px; background: transparent; color: #71717a; }
-  .dt .del:hover { color: #f87171; }
-  .dtitle { font-size: 12px; font-weight: 600; margin: 6px 0 2px; }
   .bb .grip { cursor: grab; font-size: 15px; padding: 3px 6px; color: #a1a1aa; }
   .bb .grip:hover { color: #fafafa; }
   .box.drag { border: 2px dashed #a1a1aa; background: rgba(161,161,170,.12); }
@@ -169,6 +141,102 @@
   .agentp .opt .msg { display: block; margin: 4px 0 0 22px; font-size: 12px; }
   .agentp .opt input[type=password], .agentp .opt input[type=text] { width: calc(100% - 22px); margin: 6px 0 0 22px; }
   .agentp code { font: 11.5px ui-monospace, monospace; background: #27272a; padding: 1px 4px; border-radius: 4px; }
+  /* Panels: frosted glass, hairline edges, soft depth. */
+  .panel { background: rgba(24,24,26,.92); -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255,255,255,.09); border-radius: 16px; box-shadow: 0 24px 64px rgba(0,0,0,.38), 0 2px 8px rgba(0,0,0,.2);
+    font: 13px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; letter-spacing: -.005em; }
+  .panel[style*="block"] { animation: hepop .22s cubic-bezier(.2,.9,.3,1.2); }
+  @keyframes hepop { from { opacity: 0; transform: translateY(6px) scale(.985); } }
+  .src.panel[style*="block"] { animation: none; }
+  .primary { background: #0a84ff; }
+  .primary:hover { background: #2b95ff; }
+  /* ---------- chart panel ---------- */
+  .chartp { right: 12px; top: 60px; width: 372px; max-height: calc(100vh - 72px); overflow: auto; padding: 14px 14px 0; scrollbar-width: thin; }
+  .chartp .cph { display: flex; flex-direction: column; gap: 2px; padding-right: 30px; margin-bottom: 10px; }
+  .chartp .cpk { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgba(235,235,245,.45); }
+  .chartp .cpt .ctl { min-height: 0; }
+  .chartp .cpt input { font: 600 17px/1.25 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; letter-spacing: -.01em; background: transparent;
+    border: 1px solid transparent; padding: 3px 6px; margin-left: -7px; border-radius: 8px; }
+  .chartp .cpt input:hover { background: rgba(255,255,255,.05); }
+  .chartp .cpt input:focus { background: rgba(255,255,255,.07); outline: none; box-shadow: 0 0 0 3px rgba(10,132,255,.35); }
+  .chartp .cpt .rst { display: none; }
+  .types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 0 0 12px; }
+  .types button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 2px 7px; border-radius: 12px;
+    background: rgba(255,255,255,.05); color: rgba(235,235,245,.72); font-size: 11px; font-weight: 500;
+    transition: background .15s, color .15s, box-shadow .15s, transform .12s; }
+  .types button:hover { background: rgba(255,255,255,.1); color: #fff; }
+  .types button:active { transform: scale(.95); }
+  .types button.on { background: rgba(10,132,255,.2); color: #fff; box-shadow: inset 0 0 0 1.5px #0a84ff; }
+  .types button.on svg { color: #64b5ff; }
+  .types svg { width: 26px; height: 22px; }
+  .seg { position: relative; display: flex; padding: 2px; margin: 0 0 12px; border-radius: 9px; background: rgba(118,118,128,.24); }
+  .seg button { flex: 1; text-align: center; padding: 5px 0; border-radius: 7px; background: transparent; font-size: 12.5px; font-weight: 500;
+    color: rgba(235,235,245,.75); transition: background .18s, color .18s, box-shadow .18s; }
+  .seg button:hover { background: rgba(255,255,255,.06); }
+  .seg button.on { background: #636366; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .chartp .msg { font-size: 12px; }
+  .chartp details { margin: 0 0 10px; }
+  .chartp summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; padding: 4px 2px 6px;
+    font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: rgba(235,235,245,.5); user-select: none; }
+  .chartp summary::-webkit-details-marker { display: none; }
+  .chartp summary::before { content: ""; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0;
+    transform: rotate(-45deg); transition: transform .18s; margin: 0 3px 0 2px; }
+  .chartp details[open] > summary::before { transform: rotate(45deg); }
+  .chartp summary:hover { color: rgba(235,235,245,.8); }
+  .chartp .list { border-radius: 12px; background: rgba(255,255,255,.045); overflow: hidden; }
+  .chartp .r { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 8px 6px 12px; min-height: 38px; }
+  .chartp .r + .r { box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
+  .chartp .r > label { color: rgba(235,235,245,.78); font-size: 13px; flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chartp .r > .ctl { flex: 0 1 58%; justify-content: flex-end; }
+  .ctl { display: flex; gap: 6px; align-items: center; min-height: 26px; }
+  .chartp input, .chartp select { background: rgba(255,255,255,.07); border: 1px solid transparent; border-radius: 7px; color: #f5f5f7;
+    padding: 5px 8px; font: 13px -apple-system, BlinkMacSystemFont, system-ui, sans-serif; transition: box-shadow .15s, background .15s; }
+  .chartp input:focus, .chartp select:focus { outline: none; box-shadow: 0 0 0 3px rgba(10,132,255,.35); background: rgba(255,255,255,.1); }
+  .chartp .r input[type=text], .chartp .r input:not([type]), .chartp .r input[type=number] { width: 100%; min-width: 0; text-align: right; }
+  .chartp select { -webkit-appearance: none; appearance: none; width: auto; max-width: 100%; padding-right: 24px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3.5l3 3 3-3' fill='none' stroke='%23aeaeb2' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center; }
+  .ctl input[type=checkbox] { -webkit-appearance: none; appearance: none; position: relative; width: 38px; height: 22px; margin: 0; padding: 0; flex: none;
+    border-radius: 11px; background: rgba(120,120,128,.36); cursor: pointer; transition: background .2s; }
+  .ctl input[type=checkbox]::before { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.3); transition: transform .2s cubic-bezier(.3,1.3,.5,1); }
+  .ctl input[type=checkbox]:checked { background: #30d158; }
+  .ctl input[type=checkbox]:checked::before { transform: translateX(16px); }
+  .ctl input[type=color] { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; padding: 0; flex: none; border-radius: 50%;
+    border: none; background: none; cursor: pointer; box-shadow: 0 0 0 1px rgba(255,255,255,.25); }
+  .ctl input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+  .ctl input[type=color]::-webkit-color-swatch { border: none; border-radius: 50%; }
+  .ctl input[type=color]::-moz-color-swatch { border: none; border-radius: 50%; }
+  .ctl input[type=color].none::-webkit-color-swatch { background: conic-gradient(#8e8e93 25%, #d1d1d6 0 50%, #8e8e93 0 75%, #d1d1d6 0) 0 0/8px 8px; }
+  .ctl input[type=color] + input { width: 92px; flex: none; font: 12px ui-monospace, SFMono-Regular, monospace; text-align: left; }
+  .ctl input[type=range] { padding: 0; flex: 1; accent-color: #0a84ff; background: none; }
+  .ctl .val { width: 34px; color: rgba(235,235,245,.6); font: 12px ui-monospace, monospace; text-align: right; }
+  .ctl .code, .ctl .note { color: rgba(235,235,245,.55); font-size: 12px; text-align: right; }
+  .ctl .code { color: #ffd60a; font-family: ui-monospace, monospace; }
+  .ctl .rst { padding: 2px 4px; background: transparent; color: rgba(235,235,245,.35); flex: none; font-size: 12px; }
+  .ctl .rst:hover { color: #fff; background: transparent; }
+  .chartp textarea { height: 46vh; border-radius: 10px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.08); }
+  .dtw { max-height: 46vh; overflow: auto; margin: 4px 0 8px; border-radius: 12px; background: rgba(255,255,255,.045); }
+  table.dt { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  .dt th { color: rgba(235,235,245,.55); font-weight: 600; font-size: 11px; text-align: left; padding: 7px 5px 5px; position: sticky; top: 0;
+    background: rgba(44,44,46,.97); }
+  .dt td { padding: 1px 2px; }
+  .dt tr + tr td { box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+  .dt td.n { color: rgba(235,235,245,.3); font: 11px ui-monospace, monospace; padding: 0 4px 0 8px; }
+  .dt input { width: 100%; padding: 4px 6px; font: 12.5px ui-monospace, SFMono-Regular, monospace; min-width: 56px; border-radius: 6px; background: transparent; }
+  .dt input:hover { background: rgba(255,255,255,.05); }
+  .dt .del { padding: 2px 7px; background: transparent; color: rgba(235,235,245,.3); }
+  .dt .del:hover { color: #ff453a; background: transparent; }
+  .dtitle { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: rgba(235,235,245,.5); margin: 4px 2px 6px; }
+  .chartp .addrow { background: transparent; color: #0a84ff; padding: 4px 6px; margin: 0 0 10px; font-weight: 500; }
+  .chartp .addrow:hover { background: rgba(10,132,255,.12); }
+  .chartp .foot { position: sticky; bottom: 0; margin: 4px -14px 0; padding: 10px 14px 12px; align-items: center;
+    background: linear-gradient(rgba(28,28,30,0), rgba(28,28,30,.96) 30%); }
+  .chartp .live { margin-right: auto; font-size: 12px; color: rgba(235,235,245,.5); display: flex; align-items: center; gap: 6px; }
+  .chartp .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #48484a; transition: background .2s, box-shadow .2s; }
+  .chartp .live.on::before { background: #30d158; box-shadow: 0 0 0 3px rgba(48,209,88,.2); }
+  .chartp .foot button { padding: 6px 14px; border-radius: 8px; font-weight: 500; }
+
 </style>
 <div class="box hov"><span class="tag"></span></div>
 <div class="box sel"></div>
@@ -218,13 +286,14 @@
   <div class="row"><button class="cancel">Cancel</button><button class="primary save">Save</button></div>
 </div>
 <div class="panel chartp">
-  <h4></h4>
-  <div class="tabs"><button data-tab="form">Chart</button><button data-tab="data">Data</button><button data-tab="code">Code</button></div>
+  <div class="cph"><span class="cpk"></span><div class="cpt"></div></div>
+  <div class="types"></div>
+  <div class="seg tabs"><button data-tab="form">Style</button><button data-tab="data">Data</button><button data-tab="code">Code</button></div>
   <p class="msg"></p>
   <div class="tab form"></div>
   <div class="tab data"></div>
   <div class="tab code"><p class="msg spec-label">Full spec</p><textarea spellcheck="false"></textarea></div>
-  <div class="row"><button class="cancel">Cancel</button><button class="primary apply">Apply</button></div>
+  <div class="row foot"><span class="live">Live preview</span><button class="cancel">Cancel</button><button class="primary apply">Apply</button></div>
 </div>
 <div class="panel ins">
   <h4>Add</h4>
@@ -684,6 +753,7 @@
     .querySelectorAll(".cancel")
     .forEach((b) => b.addEventListener("click", () => closePanel()));
   for (const p of root.querySelectorAll(".panel")) {
+    if (p.querySelector(":scope > .x")) continue;
     const x = document.createElement("button");
     x.className = "x";
     x.textContent = "✕";
@@ -1018,13 +1088,15 @@
       let chart = Chart.getChart(el);
       const chs = changes(from[1], to[1]);
       for (const ch of chs) {
-        if (isMarker(ch.value) || ch.path[0] === "type") continue;
+        if (isMarker(ch.value) || ch.path[0] === "type" || ch.path[1] === "indexAxis") continue;
         setPath(chart.config, ch.path, ch.value === undefined ? undefined : clone(ch.value));
       }
-      if (chs.some((ch) => ch.path[0] === "type")) {
+      if (chs.some((ch) => ch.path[0] === "type" || (ch.path[0] === "options" && ch.path[1] === "indexAxis"))) {
         // A new chart type needs a new chart; reuse the live data and options
         // so code values (callbacks) keep working.
         const { data, options, plugins } = chart.config;
+        if (to[1].options && "indexAxis" in to[1].options) options.indexAxis = to[1].options.indexAxis;
+        else delete options.indexAxis;
         chart.destroy();
         chart = new Chart(el, { type: to[1].type, data, options, plugins });
       } else chart.update();
@@ -1051,6 +1123,28 @@
     if (c.kind !== "plotly" || !el) return {};
     return { fullData: el._fullData || [], fullLayout: el._fullLayout || {} };
   };
+
+  // Chart-type tile icons (24×20, drawn in currentColor).
+  const ic = (body) => `<svg viewBox="0 0 24 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+  const TYPE_ICONS = {
+    bar: ic('<path d="M4 18V10M9.5 18V4M15 18V8M20.5 18V12" stroke-width="3.2"/>'),
+    hbar: ic('<path d="M3 4h10M3 8.7h17M3 13.3h7M3 18h13" stroke-width="2.8"/>'),
+    line: ic('<path d="M2 16l6-6 4 3 9-10"/><circle cx="8" cy="10" r="1.3" fill="currentColor"/><circle cx="12" cy="13" r="1.3" fill="currentColor"/>'),
+    area: ic('<path d="M2 17l6-7 4 3 10-9v13z" fill="currentColor" fill-opacity=".35"/><path d="M2 17l6-7 4 3 10-9"/>'),
+    scatter: ic('<circle cx="5" cy="14" r="1.8" fill="currentColor"/><circle cx="10" cy="9" r="1.8" fill="currentColor"/><circle cx="14" cy="13" r="1.8" fill="currentColor"/><circle cx="19" cy="5" r="1.8" fill="currentColor"/><circle cx="17" cy="11" r="1.8" fill="currentColor"/>'),
+    pie: ic('<circle cx="12" cy="10" r="8"/><path d="M12 2v8h8" fill="currentColor" fill-opacity=".45"/><path d="M12 2a8 8 0 0 1 8 8h-8z" fill="currentColor" fill-opacity=".45"/>'),
+    doughnut: ic('<circle cx="12" cy="10" r="7.5" stroke-width="3.5" stroke-opacity=".45"/><path d="M12 2.5a7.5 7.5 0 0 1 7.5 7.5" stroke-width="3.5"/>'),
+    box: ic('<path d="M7 3v3M7 14v3M17 5v3M17 13v4"/><rect x="4.5" y="6" width="5" height="8" rx="1"/><rect x="14.5" y="8" width="5" height="5" rx="1"/><path d="M4.5 10h5M14.5 10.5h5"/>'),
+    histogram: ic('<path d="M3 18V12h4V6h4V3h4v6h4v9z" fill="currentColor" fill-opacity=".35"/><path d="M3 18V12h4V6h4V3h4v6h4v9"/>'),
+    polarArea: ic('<path d="M12 10V2a8 8 0 0 1 7 4z M12 10l7-4a8 8 0 0 1-2 10z M12 10l5 6a8 8 0 0 1-11 0z" fill="currentColor" fill-opacity=".4"/><circle cx="12" cy="10" r="8" stroke-opacity=".4"/>'),
+    radar: ic('<path d="M12 2l8 6-3 10H7L4 8z" stroke-opacity=".45"/><path d="M12 5l5 4-2 6H9.5L7 9z" fill="currentColor" fill-opacity=".35"/>'),
+    bubble: ic('<circle cx="7" cy="13" r="3.5"/><circle cx="16" cy="7" r="4.5" fill="currentColor" fill-opacity=".3"/><circle cx="17" cy="15.5" r="2"/>'),
+    point: ic('<circle cx="5" cy="14" r="2"/><circle cx="10" cy="8" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="19" cy="5" r="2"/>'),
+    circle: ic('<circle cx="5" cy="14" r="2" fill="currentColor"/><circle cx="10" cy="8" r="2.6" fill="currentColor"/><circle cx="15.5" cy="12" r="2.2" fill="currentColor"/><circle cx="19.5" cy="5" r="1.6" fill="currentColor"/>'),
+    tick: ic('<path d="M5 6v8M9 4v8M13 8v8M17 5v8M21 9v7"/>'),
+    arc: ic('<circle cx="12" cy="10" r="8"/><path d="M12 2a8 8 0 0 1 8 8h-8z" fill="currentColor" fill-opacity=".45"/>'),
+    donut: ic('<circle cx="12" cy="10" r="7.5" stroke-width="3.5" stroke-opacity=".45"/><path d="M12 2.5a7.5 7.5 0 0 1 7.5 7.5" stroke-width="3.5"/>'),
+  };
   let chartTab = "form";
   const sectionOpen = new Map(); // section title → open, kept while the panel is used
 
@@ -1067,23 +1161,31 @@
     let state = isMermaid ? null : clone(orig);
     let shown = isMermaid ? null : clone(orig); // what the live chart shows now
     let previewed = false;
-    $(".chartp h4").textContent = { plotly: "Plotly chart", chartjs: "Chart.js chart", vega: "Vega-Lite chart", mermaid: "Mermaid diagram" }[c.kind];
+    $(".chartp .cpk").textContent = { plotly: "Plotly chart", chartjs: "Chart.js chart", vega: "Vega-Lite chart", mermaid: "Mermaid diagram" }[c.kind];
+    const live = $(".chartp .live");
+    live.classList.remove("on");
+    live.textContent = "Live preview";
     note.textContent = isMermaid
       ? "Diagram source (Mermaid). Preview updates as you type."
       : opaque
         ? "This chart's spec is computed by code, so it can't be edited here — use </> on the script."
         : "";
 
+    // Clicks preview at once; typing waits a beat.
     const changed = (structural) => {
       syncJson();
-      schedule();
-      if (structural) renderForm();
+      schedule(structural ? 0 : 140);
+      if (structural) {
+        renderForm();
+        renderTypes();
+      }
     };
 
     // One form row: label + control. `k` comes from chartform.build().
     const control = (k) => {
       const lab = document.createElement("label");
       lab.textContent = k.label;
+      lab.title = k.label;
       const box = document.createElement("div");
       box.className = "ctl";
       box.dataset.path = JSON.stringify(k.path.map(String));
@@ -1167,7 +1269,10 @@
         i.value = k.raw ?? "";
         i.placeholder = k.placeholder || "default";
         sw.value = colourHex(k.raw) || colourHex(k.placeholder) || "#000000";
+        // transparent / unset: a checkerboard instead of a misleading black
+        sw.classList.toggle("none", !colourHex(k.raw) && !colourHex(k.placeholder));
         sw.oninput = () => {
+          sw.classList.remove("none");
           i.value = sw.value;
           set(sw.value);
         };
@@ -1187,27 +1292,73 @@
       return [lab, box];
     };
 
+    const titleSlot = $(".chartp .cpt");
     const renderForm = () => {
       const y = panel.scrollTop;
       form.innerHTML = "";
+      titleSlot.innerHTML = "";
       if (isMermaid || opaque) return;
       const { sections } = CF.build(c.kind, state, orig, hintsOf(c, el));
+      // The chart title lives in the header, like a document name.
+      const first = sections[0] && sections[0].controls;
+      const ti = first ? first.findIndex((k) => k.label === "title" && k.type === "text" && !k.code) : -1;
+      if (ti >= 0) {
+        const [, box] = control(first[ti]);
+        box.querySelector("input").placeholder = "Add a title";
+        titleSlot.appendChild(box);
+        first.splice(ti, 1);
+      }
+      // Chart-wide type controls are the tiles above; per-series ones stay.
+      const hasTypes = !!CF.chartTypes(c.kind, state, orig);
+      const TILE_PATHS = new Set(
+        c.kind === "chartjs" ? ['["1","type"]', '["1","options","indexAxis"]'] : c.kind === "vega" ? ['["1","mark"]', '["1","layer","0","mark"]'] : [],
+      );
       sections.forEach((s, n) => {
-        if (!s.controls.length) return;
+        if (!s.controls.length || (hasTypes && s.controls.every((k) => TILE_PATHS.has(JSON.stringify(k.path.map(String)))))) return;
         const d = document.createElement("details");
         const keyOf = c.kind + "|" + s.title.replace(/ · .*/, "");
-        d.open = sectionOpen.has(keyOf) ? sectionOpen.get(keyOf) : !s.closed && n < 4;
+        d.open = sectionOpen.has(keyOf) ? sectionOpen.get(keyOf) : !s.closed && n < 2;
         d.ontoggle = () => sectionOpen.set(keyOf, d.open);
         const sum = document.createElement("summary");
         sum.textContent = s.title;
-        const grid = document.createElement("div");
-        grid.className = "grid";
-        for (const k of s.controls) grid.append(...control(k));
-        d.append(sum, grid);
+        const list = document.createElement("div");
+        list.className = "list";
+        for (const k of s.controls) {
+          if (hasTypes && TILE_PATHS.has(JSON.stringify(k.path.map(String))) && !k.code) continue;
+          const r = document.createElement("div");
+          r.className = "r";
+          r.append(...control(k));
+          list.appendChild(r);
+        }
+        d.append(sum, list);
         form.appendChild(d);
       });
       if (!form.children.length) form.textContent = "No editable settings found — use Data or Code.";
       panel.scrollTop = y;
+    };
+
+    // One-click chart types, previewed live.
+    const typesBox = $(".chartp .types");
+    const renderTypes = () => {
+      typesBox.innerHTML = "";
+      const t = !isMermaid && !opaque && CF.chartTypes(c.kind, state, orig);
+      typesBox.style.display = t ? "" : "none";
+      if (!t) return;
+      for (const o of t.options) {
+        const b = document.createElement("button");
+        b.dataset.type = o.id;
+        b.className = o.id === t.current ? "on" : "";
+        b.innerHTML = (TYPE_ICONS[o.id] || TYPE_ICONS.bar) + "<span></span>";
+        b.lastChild.textContent = o.label;
+        b.title = o.label;
+        b.onclick = () => {
+          CF.chartTypes(c.kind, state, orig).apply(o.id);
+          renderData();
+          tabBtn("data").style.display = tables.length ? "" : "none";
+          changed(true);
+        };
+        typesBox.appendChild(b);
+      }
     };
 
     let tables = [];
@@ -1296,7 +1447,7 @@
       ta.value = isMermaid ? ta.value : JSON.stringify(c.specs.length === 1 ? state[c.specs[0].arg] : state, null, 2);
     };
     let timer = null;
-    const schedule = () => {
+    const schedule = (delay = 140) => {
       clearTimeout(timer);
       timer = setTimeout(async () => {
         try {
@@ -1305,19 +1456,24 @@
             const { svg } = await m.render("he-mmd-" + Date.now(), decodeMermaid(ta.value));
             el.innerHTML = svg;
             previewed = true;
-            say("Preview ✓");
           } else {
             if (await previewChart(c, el, shown, state)) {
               shown = clone(state);
               previewed = true;
-              say("Preview ✓");
-            } else say("no live preview for this chart; Apply to save");
+            } else {
+              live.textContent = "No live preview · Apply to save";
+              return;
+            }
           }
+          live.classList.add("on");
+          live.textContent = "Live preview";
           showSelected();
         } catch (e) {
+          live.classList.remove("on");
+          live.textContent = "Preview failed";
           say("preview: " + e.message, true);
         }
-      }, 250);
+      }, delay);
     };
     ta.oninput = () => {
       if (isMermaid) return schedule();
@@ -1326,6 +1482,7 @@
         state = c.specs.length === 1 ? { [c.specs[0].arg]: v } : v;
         ta.style.borderColor = "";
         renderForm();
+        renderTypes();
         renderData();
         schedule();
       } catch {
@@ -1339,6 +1496,7 @@
     const r = el.getBoundingClientRect();
     if (r.top < 0 || r.bottom > innerHeight) el.scrollIntoView({ block: "center" });
     renderForm();
+    renderTypes();
     renderData();
     tabBtn("data").style.display = tables.length ? "" : "none";
     syncJson();

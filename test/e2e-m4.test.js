@@ -280,7 +280,7 @@ test("chart form: dropdown + checkbox + data row on a Plotly bar chart", async (
   await s.close();
 });
 
-test("chart form: Chart.js type dropdown re-creates the chart, keeps callbacks", async () => {
+test("chart form: Chart.js type tile re-creates the chart, keeps callbacks", async () => {
   const s = await open({ fixture: "chartjs_report.html" });
   const { page } = s;
   await page.waitForFunction(() => window.Chart && Chart.getChart(document.getElementById("scores")));
@@ -289,7 +289,8 @@ test("chart form: Chart.js type dropdown re-creates the chart, keeps callbacks",
   await page.locator("#scores").click();
   await opened(page);
   await tab(page, "form");
-  await setField(page, ["1", "type"], "line");
+  await ui(page, '.chartp .types [data-type="line"]').click();
+  assert.match(await ui(page, ".chartp .types .on").textContent(), /Line/);
   await setField(page, ["1", "options", "plugins", "legend", "position"], "bottom");
   await page.waitForFunction(() => {
     const ch = Chart.getChart(document.getElementById("scores"));
@@ -313,7 +314,7 @@ test("chart form: Chart.js type dropdown re-creates the chart, keeps callbacks",
   await s.close();
 });
 
-test("chart form: Vega-Lite mark dropdown", async () => {
+test("chart form: Vega-Lite mark tile", async () => {
   const s = await open({ fixture: "vega_report.html" });
   const { page } = s;
   await page.waitForSelector("#vis svg");
@@ -322,10 +323,35 @@ test("chart form: Vega-Lite mark dropdown", async () => {
   await page.locator("#vis").click();
   await opened(page);
   await tab(page, "form");
-  await setField(page, ["1", "mark"], "line");
+  await ui(page, '.chartp .types [data-type="line"]').click();
   await page.waitForFunction(() => document.querySelector("#vis svg .mark-line"));
   await apply(page);
   assert.ok(await until(() => s.read() !== s.orig));
   assert.strictEqual(s.read(), s.orig.replace(`"type": "bar", "color"`, `"type": "line", "color"`));
+  await s.close();
+});
+
+test("chart type tiles: switch live through bar → pie → area and back writes nothing", async () => {
+  const s = await open({ fixture: "chartjs_report.html" });
+  const { page } = s;
+  await page.waitForFunction(() => window.Chart && Chart.getChart(document.getElementById("scores")));
+  await page.keyboard.press("e");
+  await page.waitForTimeout(200);
+  await page.locator("#scores").click();
+  await opened(page);
+  const tile = (t) => ui(page, `.chartp .types [data-type="${t}"]`).click();
+  const live = (t) => page.waitForFunction((t) => Chart.getChart(document.getElementById("scores")).config.type === t, t);
+  await tile("pie");
+  await live("pie");
+  await tile("area");
+  await live("line");
+  assert.ok(await page.evaluate(() => Chart.getChart(document.getElementById("scores")).data.datasets.every((d) => d.fill)));
+  await tile("hbar");
+  await page.waitForFunction(() => Chart.getChart(document.getElementById("scores")).options.indexAxis === "y");
+  await tile("bar");
+  await page.waitForFunction(() => Chart.getChart(document.getElementById("scores")).options.indexAxis !== "y");
+  await apply(page);
+  await page.waitForTimeout(400);
+  assert.strictEqual(s.read(), s.orig, "back to the original type: file unchanged");
   await s.close();
 });

@@ -10,6 +10,12 @@
 - `hotedit mcp`: an MCP server so coding agents (Claude Code, Codex, Cursor…)
   can open a report in your browser and edit it live (`open`, `outline`,
   `read`, `edit`, `notes`, `resolve_note`).
+- Redesigned chart panel: one-click chart-type tiles (bar, horizontal bars,
+  line, area, dots, pie, donut, polar, radar, box, histogram…) that redraw
+  the chart live and switch back without touching the file; the title edits
+  in the header; settings in grouped rows with switches and pop-up menus;
+  Style · Data · Code as a segmented control; faster live preview. Round
+  Chart.js types set the x/y axes aside and restore them on the way back.
 - The text caret takes each block's colour, or black/white against its
   background, so it shows on dark, coloured and gradient sections; selection
   outlines show on any background.

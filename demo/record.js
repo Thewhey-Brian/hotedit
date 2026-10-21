@@ -9,6 +9,7 @@ const os = require("os");
 const path = require("path");
 const { execFileSync } = require("child_process");
 const { chromium } = require("playwright");
+process.env.HTMLEDIT_STATE_DIR ||= fs.mkdtempSync(path.join(os.tmpdir(), "hotedit-rec-state-"));
 process.env.HTMLEDIT_BACKUP_DIR ||= fs.mkdtempSync(
   path.join(os.tmpdir(), "hotedit-backups-"),
 );
@@ -281,10 +282,14 @@ const esc = (s) =>
   await pause(1200);
 
   // ── 3. Plotly: form + data, live ─────────────────────────────────────
-  await cap(3, "Click a chart: dropdowns, colours and data — it redraws live");
+  await cap(3, "Click a chart: pick a type, colours, data — it redraws live");
   await click(page.locator("#trend"), { dx: 360, dy: 160 });
   await ui(".chartp").waitFor({ state: "visible" });
   await pause(600);
+  for (const t of ["bar", "area", "line"]) {
+    await click(ui(`.chartp .types [data-type="${t}"]`));
+    await pause(t === "line" ? 600 : 1100);
+  }
   await click(ui('.chartp [data-tab="form"]'));
   await pause(400);
   await openSection("Series 1");
@@ -309,10 +314,10 @@ const esc = (s) =>
   await ui(".chartp").waitFor({ state: "visible" });
   await click(ui('.chartp [data-tab="form"]'));
   await pause(400);
-  const ct = ctl(["1", "type"]).locator("select");
-  await into(ct);
-  await ct.selectOption({ label: "line" });
-  await pause(1300);
+  await click(ui('.chartp .types [data-type="doughnut"]'));
+  await pause(1200);
+  await click(ui('.chartp .types [data-type="line"]'));
+  await pause(1200);
   await click(ui(".chartp .apply"));
   await pause(800);
   await click(page.locator("#regions svg"), { dx: 200, dy: 120 });
@@ -400,9 +405,11 @@ const esc = (s) =>
   await pause(1300);
 
   // ── 8. Note for the AI agent ─────────────────────────────────────────
-  await cap(7, "Bigger change? Leave a 💬 note for your AI agent");
+  await cap(7, "Bigger change? ✨ asks Claude live, or leaves a note for later");
   await selectBlock(page.locator(".callout.warn p"), { dx: 220 });
-  await click(ui('.bb [data-act="comment"]'));
+  await click(ui('.bb [data-act="ai"]'));
+  await pause(700);
+  await click(ui(".agentp .tonote"));
   await pause(500);
   await type("Recompute the coastal intervals and update this warning", 38);
   await click(ui(".cmtp .save"));

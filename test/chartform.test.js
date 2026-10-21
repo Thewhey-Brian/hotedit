@@ -183,3 +183,40 @@ test("put() drops parents it emptied, keeps ones from the source", () => {
   CF.put(st, ["2", "margin", "t"], undefined, orig);
   assert.deepStrictEqual(st, { 2: { margin: {} } });
 });
+
+test("chartTypes: Plotly bar → pie (labels/values) → horizontal → back restores exactly", () => {
+  const state = { 1: [{ x: ["a", "b"], y: [1, 2], type: "bar" }], 2: {} };
+  const orig = JSON.parse(JSON.stringify(state));
+  const t = CF.chartTypes("plotly", state, orig);
+  assert.strictEqual(t.current, "bar");
+  assert.ok(t.options.some((o) => o.id === "pie"));
+  t.apply("pie");
+  assert.deepStrictEqual(state[1][0], { type: "pie", labels: ["a", "b"], values: [1, 2] });
+  CF.chartTypes("plotly", state, orig).apply("hbar");
+  assert.deepStrictEqual(state[1][0], { type: "bar", x: [1, 2], y: ["a", "b"], orientation: "h" });
+  CF.chartTypes("plotly", state, orig).apply("area");
+  assert.strictEqual(CF.chartTypes("plotly", state, orig).current, "area");
+  CF.chartTypes("plotly", state, orig).apply("bar");
+  assert.deepStrictEqual(state[1][0], orig[1][0]);
+});
+
+test("chartTypes: no pie for several Plotly traces; code types are not offered", () => {
+  const two = { 1: [{ y: [1] }, { y: [2] }], 2: {} };
+  assert.ok(!CF.chartTypes("plotly", two, two).options.some((o) => o.id === "pie"));
+  assert.strictEqual(CF.chartTypes("chartjs", { 1: { type: "⟪js⟫ kind" } }, {}), null);
+});
+
+test("chartTypes: Chart.js area fills datasets; Vega-Lite keeps mark props", () => {
+  const c = { 1: { type: "bar", data: { labels: ["a"], datasets: [{ data: [1] }, { data: [2] }] } } };
+  const co = JSON.parse(JSON.stringify(c));
+  CF.chartTypes("chartjs", c, co).apply("area");
+  assert.strictEqual(c[1].type, "line");
+  assert.deepStrictEqual(c[1].data.datasets.map((d) => d.fill), ["origin", "-1"]);
+  CF.chartTypes("chartjs", c, co).apply("bar");
+  assert.deepStrictEqual(c, co);
+  const v = { 1: { mark: { type: "bar", color: "red" }, encoding: {} } };
+  const vo = JSON.parse(JSON.stringify(v));
+  CF.chartTypes("vega", v, vo).apply("line");
+  assert.deepStrictEqual(v[1].mark, { type: "line", color: "red" });
+  assert.strictEqual(CF.chartTypes("vega", v, vo).current, "line");
+});

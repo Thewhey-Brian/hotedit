@@ -51,7 +51,7 @@ hotedit report.html
 | **Add things** | Select a block and click **＋**: paragraph, heading, list or list item, box, quote, table, code, divider, image, chart, Mermaid diagram or your own HTML. Choose above, below or inside. |
 | **Move things** | Drag **⠿** to move a block anywhere: list items into another list, a paragraph into a box. Or use **⋯ → Move up / down** (Alt+↑ / Alt+↓). |
 | **Style** | **Aa**: size, weight, colour, alignment, font, spacing, background, corners and border. |
-| **Charts** | Click a Plotly, Chart.js, Vega-Lite or Mermaid chart. **Chart** gives dropdowns, checkboxes and colour pickers for type, titles, axes, legend and series. **Data** is an editable table with + row. **Code** is the full spec. The chart updates live. |
+| **Charts** | Click a Plotly, Chart.js, Vega-Lite or Mermaid chart. Pick a type from the tiles (bar, line, area, dots, pie, donut…) and it redraws instantly. **Style** has switches, menus and colour pickers for titles, axes, legend and series; **Data** is an editable table with + row; **Code** is the full spec. Everything previews live; **Apply** saves. |
 | **Images & links** | **🖼** replaces an image, **🔗** changes a link. |
 | **Everything else** | **⋯**: duplicate, hide, delete, or **Edit HTML** for the selected block. The name chip (e.g. *Paragraph ▴*) selects the block around it. |
 | **Ask AI, live** | **✨** on a block (or **✨ AI** in the top bar for the whole page): type what should change, and Claude edits the page while you watch. Every change glows as it lands and **Undo AI changes** takes them all back. Or choose **Leave as note** for later. |

@@ -775,5 +775,163 @@
     return out;
   }
 
-  return { build, tables, put, get, isMarker };
+  // ---------- chart type picker ----------
+  // {current, options: [{id, label}], apply(id)}: one-click whole-chart type
+  // switches (bar ⇄ line ⇄ area ⇄ pie …), or null when the type is code.
+  const clone = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
+  const shelved = new WeakMap(); // state → Chart.js axes set aside for a round chart
+  function chartTypes(kind, state, orig) {
+    const P = (path, v) => put(state, path, v, orig);
+    if (kind === "plotly") {
+      const data = state["1"];
+      if (!Array.isArray(data) || !data.length || data.some((t) => !isObj(t) || isMarker(t.type) || isMarker(t.mode))) return null;
+      const t0 = data[0];
+      const typeOf = (t) => {
+        const ty = t.type || "scatter";
+        if (ty === "pie") return t.hole ? "doughnut" : "pie";
+        if (ty === "bar") return t.orientation === "h" ? "hbar" : "bar";
+        if (ty !== "scatter" && ty !== "scattergl") return ty;
+        if (t.fill && t.fill !== "none") return "area";
+        return /lines/.test(t.mode || (t.x && t.x.length > 20 ? "lines" : "lines+markers")) ? "line" : "scatter";
+      };
+      const current = typeOf(t0);
+      const was = Array.isArray(orig["1"]) && isObj(orig["1"][0]) ? typeOf(orig["1"][0]) : null;
+      const pieable = data.length === 1;
+      const options = [
+        ["bar", "Bar"], ["hbar", "Bars →"], ["line", "Line"], ["area", "Area"], ["scatter", "Dots"],
+        ...(pieable ? [["pie", "Pie"], ["doughnut", "Donut"]] : []),
+        ["box", "Box"], ["histogram", "Histogram"],
+      ];
+      if (!options.some((o) => o[0] === current)) options.push([current, current]);
+      const apply = (id) => {
+        // Back to the original type: restore those keys exactly (no diff).
+        if (id === was)
+          return data.forEach((t, i) => {
+            const o = orig["1"][i];
+            if (isObj(o)) for (const k of ["type", "mode", "fill", "orientation", "hole", "x", "y", "labels", "values"]) P(["1", i, k], clone(o[k]));
+          });
+        data.forEach((t, i) => {
+          const b = ["1", i];
+          const wasPie = t.type === "pie";
+          const toPie = id === "pie" || id === "doughnut";
+          // pie uses labels/values; the others use x/y
+          if (toPie && !wasPie) {
+            if (t.labels === undefined && t.x !== undefined) P([...b, "labels"], t.x), P([...b, "x"], undefined);
+            if (t.values === undefined && t.y !== undefined) P([...b, "values"], t.y), P([...b, "y"], undefined);
+          } else if (!toPie && wasPie) {
+            if (t.x === undefined && t.labels !== undefined) P([...b, "x"], t.labels), P([...b, "labels"], undefined);
+            if (t.y === undefined && t.values !== undefined) P([...b, "y"], t.values), P([...b, "values"], undefined);
+            P([...b, "hole"], undefined);
+          }
+          const flipXY = (h) => {
+            // horizontal bars read values from x
+            if ((t.orientation === "h") === h) return;
+            const x = t.x, y = t.y;
+            P([...b, "x"], y), P([...b, "y"], x);
+          };
+          if (id !== "hbar" && t.orientation === "h" && !toPie) flipXY(false);
+          if (id === "hbar" && t.orientation !== "h") flipXY(true);
+          const fill = id === "area" ? "tozeroy" : undefined;
+          if (id === "bar" || id === "hbar") {
+            P([...b, "type"], "bar");
+            P([...b, "mode"], undefined);
+            P([...b, "fill"], undefined);
+            P([...b, "orientation"], id === "hbar" ? "h" : undefined);
+          } else if (id === "line" || id === "area" || id === "scatter") {
+            P([...b, "type"], t.type === "scattergl" ? "scattergl" : t.type === undefined && orig["1"] && orig["1"][i] && orig["1"][i].type === undefined ? undefined : "scatter");
+            P([...b, "mode"], id === "scatter" ? "markers" : "lines");
+            P([...b, "fill"], fill);
+            P([...b, "orientation"], undefined);
+          } else if (toPie) {
+            P([...b, "type"], "pie");
+            P([...b, "mode"], undefined);
+            P([...b, "fill"], undefined);
+            P([...b, "orientation"], undefined);
+            P([...b, "hole"], id === "doughnut" ? 0.5 : undefined);
+          } else {
+            P([...b, "type"], id);
+            P([...b, "mode"], undefined);
+            P([...b, "fill"], undefined);
+          }
+        });
+      };
+      return { current, options: options.map(([id, label]) => ({ id, label })), apply };
+    }
+    if (kind === "chartjs") {
+      const cfg = state["1"];
+      if (!isObj(cfg) || typeof cfg.type !== "string" || isMarker(cfg.type)) return null;
+      const sets = get(cfg, ["data", "datasets"]);
+      const ds = Array.isArray(sets) ? sets : [];
+      const horiz = get(cfg, ["options", "indexAxis"]) === "y";
+      const filled = ds.some((d) => isObj(d) && d.fill && d.fill !== "false");
+      const current = cfg.type === "bar" && horiz ? "hbar" : cfg.type === "line" && filled ? "area" : cfg.type;
+      const xy = cfg.type === "scatter" || cfg.type === "bubble";
+      const options = xy
+        ? [["scatter", "Dots"], ["bubble", "Bubbles"], ["line", "Line"]]
+        : [["bar", "Bar"], ["hbar", "Bars →"], ["line", "Line"], ["area", "Area"], ["pie", "Pie"], ["doughnut", "Donut"], ["polarArea", "Polar"], ["radar", "Radar"]];
+      if (!options.some((o) => o[0] === current)) options.push([current, current]);
+      const apply = (id) => {
+        const oc = orig["1"];
+        if (isObj(oc) && id === chartTypes(kind, { 1: clone(oc) }, orig).current) {
+          P(["1", "type"], oc.type);
+          P(["1", "options", "indexAxis"], clone(get(oc, ["options", "indexAxis"])));
+          P(["1", "options", "scales"], clone(get(oc, ["options", "scales"])));
+          shelved.delete(state);
+          return ds.forEach((d, i) => isObj(d) && P(["1", "data", "datasets", i, "fill"], clone(get(oc, ["data", "datasets", i, "fill"]))));
+        }
+        P(["1", "type"], id === "hbar" ? "bar" : id === "area" ? "line" : id);
+        // Round charts don't use x/y axes: set them aside, bring them back later.
+        const round = /^(pie|doughnut|polarArea|radar)$/.test(id);
+        const scales = get(cfg, ["options", "scales"]);
+        if (round && isObj(scales) && (scales.x || scales.y)) {
+          shelved.set(state, clone(scales));
+          P(["1", "options", "scales"], undefined);
+        } else if (!round && scales === undefined && shelved.has(state)) {
+          P(["1", "options", "scales"], shelved.get(state));
+          shelved.delete(state);
+        }
+        if (id === "hbar") P(["1", "options", "indexAxis"], "y");
+        else if (horiz) P(["1", "options", "indexAxis"], undefined);
+        ds.forEach((d, i) => {
+          if (!isObj(d)) return;
+          if (id === "area") P(["1", "data", "datasets", i, "fill"], i === 0 ? "origin" : "-1");
+          else if (d.fill !== undefined && !isMarker(d.fill)) P(["1", "data", "datasets", i, "fill"], undefined);
+        });
+      };
+      return { current, options: options.map(([id, label]) => ({ id, label })), apply };
+    }
+    if (kind === "vega") {
+      const spec = state["1"];
+      if (!isObj(spec)) return null;
+      const unit = Array.isArray(spec.layer) ? ["1", "layer", 0] : ["1"];
+      const u = get(state, unit);
+      if (!isObj(u)) return null;
+      const mark = u.mark;
+      const mtype = typeof mark === "string" ? mark : isObj(mark) ? mark.type : undefined;
+      if (typeof mtype !== "string" || isMarker(mtype)) return null;
+      const enc = isObj(u.encoding) ? u.encoding : {};
+      const pie = mtype === "arc" || !!enc.theta;
+      const options = pie
+        ? [["arc", "Pie"], ["donut", "Donut"]]
+        : [["bar", "Bar"], ["line", "Line"], ["area", "Area"], ["point", "Dots"], ["circle", "Circles"], ["tick", "Ticks"]];
+      const current = mtype === "arc" && isObj(mark) && mark.innerRadius ? "donut" : mtype;
+      if (!options.some((o) => o[0] === current)) options.push([current, current]);
+      const apply = (id) => {
+        const M = [...unit, "mark"];
+        if (isObj(orig["1"]) && id === chartTypes(kind, { 1: clone(orig["1"]) }, orig).current) return P(M, clone(get(orig, M)));
+        const type = id === "donut" ? "arc" : id;
+        const m = get(state, M);
+        if (typeof m === "string" && id !== "donut") P(M, type);
+        else {
+          if (typeof m === "string") P(M, { type });
+          else P([...M, "type"], type);
+          if (pie) P([...M, "innerRadius"], id === "donut" ? 50 : undefined);
+        }
+      };
+      return { current, options: options.map(([id, label]) => ({ id, label })), apply };
+    }
+    return null;
+  }
+
+  return { build, tables, put, get, isMarker, chartTypes };
 });
