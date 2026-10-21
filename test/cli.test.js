@@ -8,6 +8,8 @@ const path = require("path");
 const { execFileSync, spawn } = require("child_process");
 const { startLauncher, findHtml } = require("../src/launcher");
 
+// Sessions started here (and by spawned CLIs) keep backups out of ~/.htmledit.
+process.env.HTMLEDIT_BACKUP_DIR ||= fs.mkdtempSync(path.join(os.tmpdir(), "htmledit-backups-"));
 const ROOT = path.join(__dirname, "..");
 const CLI = path.join(ROOT, "bin", "htmledit.js");
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "htmledit-cli-"));
@@ -117,10 +119,11 @@ test(
       encoding: "utf8",
     });
     assert.ok(
-      !/package\/(samples|test|playground|demo)\//.test(files),
+      !/package\/(samples|test|playground)\//.test(files) && !/package\/demo\/(?!showcase\.html)/.test(files),
       "no tests/samples/demo in the package:\n" + files,
     );
     assert.ok(files.includes("package/agent/SKILL.md"));
+  assert.ok(files.includes("package/demo/showcase.html"), "hotedit demo needs the showcase");
     execFileSync("npm", ["init", "-y"], { cwd: dir, stdio: "ignore" });
     execFileSync(
       "npm",
@@ -159,3 +162,24 @@ test(
     }
   },
 );
+
+test("hotedit --demo serves a throwaway copy of the showcase", { timeout: 30000 }, async () => {
+  const p = spawn("node", [CLI, "--demo", "--no-open"], { env: { ...process.env } });
+  try {
+    const out = await new Promise((resolve, reject) => {
+      let buf = "";
+      p.stdout.on("data", (d) => {
+        buf += d;
+        if (/open\s+http/.test(buf)) resolve(buf);
+      });
+      p.on("exit", (c) => reject(new Error("exited " + c + buf)));
+      setTimeout(() => reject(new Error("no url: " + buf)), 15000);
+    });
+    const url = /open\s+(http:\/\/\S+)/.exec(out)[1];
+    const file = /editing (\S+)/.exec(out)[1];
+    assert.ok(file.startsWith(os.tmpdir()) || file.includes("hotedit-demo-"), file);
+    assert.match(await (await fetch(url)).text(), /Aurora forecast model, Q3/);
+  } finally {
+    p.kill();
+  }
+});

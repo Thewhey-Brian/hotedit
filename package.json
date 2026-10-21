@@ -1,6 +1,6 @@
 {
   "name": "hotedit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Edit any HTML file in your browser \u2014 text, styles, layout, charts \u2014 and save the changes back into the file as small, clean patches. Built for AI-generated reports.",
   "keywords": [
     "html",
@@ -38,6 +38,7 @@
     "bin/",
     "src/",
     "agent/",
+    "demo/showcase.html",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"

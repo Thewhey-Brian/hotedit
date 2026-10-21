@@ -222,6 +222,18 @@ function unquote(q) {
 }
 
 // Follow `ident` → `const|let|var ident = <literal>` in the same script.
+function mutatedAfter(code, name, from) {
+  const n = name.replace(/\$/g, "\\$");
+  const rest = code.slice(from);
+  return (
+    // obs.push(…), arr.splice(…), …
+    new RegExp(`(?<![\\w$.])${n}\\s*\\.\\s*(push|unshift|splice|pop|shift|reverse|sort|fill|copyWithin)\\s*\\(`).test(rest) ||
+    // name = …, name[i] = …, name.a.b += …
+    new RegExp(`(?<![\\w$.])${n}(\\s*(\\.\\s*[\\w$]+|\\[[^\\]]*\\]))*\\s*([-+*/%]?=)(?![=>])`).test(rest) ||
+    new RegExp(`Object\\.assign\\(\\s*${n}\\b`).test(rest)
+  );
+}
+
 function resolve(lit, node, depth = 0) {
   if (!node || depth > 4) return node;
   if (node.t === "raw" && /^[A-Za-z_$][\w$]*$/.test(node.text)) {
@@ -232,7 +244,10 @@ function resolve(lit, node, depth = 0) {
     const m = re.exec(lit.m);
     if (m) {
       try {
-        node.ref = resolve(lit, lit.value(m.index + m[0].length), depth + 1);
+        const ref = resolve(lit, lit.value(m.index + m[0].length), depth + 1);
+        // A literal the script changes later (obs.push(…), spec.width = …)
+        // isn't the chart's real value: keep it as code.
+        if (!mutatedAfter(lit.m, node.text, ref.end)) node.ref = ref;
       } catch {}
     }
   } else if (node.t === "obj")

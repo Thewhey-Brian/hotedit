@@ -551,9 +551,14 @@
     srcTa.style.display = "block";
     srcIn.style.display = "none";
     srcTa.value = sig.inner;
-    openPanel(src, () =>
-      commit("/edit", { edits: [{ id: sig.id, source: srcTa.value }] }),
-    );
+    // Fit the box to the source: a one-line equation gets a small box.
+    const lines = sig.inner.split("\n").length + Math.floor(sig.inner.length / 110);
+    srcTa.style.height = `calc(${Math.min(Math.max(lines + 1, 4), 26) * 1.45}em + 14px)`;
+    openPanel(src, async () => {
+      const r = await commit("/edit", { edits: [{ id: sig.id, source: srcTa.value }] });
+      // The page shows the old render (or old HTML) until it reloads.
+      if (r && r.changed && !r.reload && !r.stale) reload();
+    });
     srcTa.focus();
   };
   const openLine = (el, msg, value, edits, after) => {

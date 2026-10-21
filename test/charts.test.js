@@ -91,3 +91,21 @@ test("all sample reports: chart scan never throws; mermaid found where present",
     cs.map(describe);
   }
 });
+
+test("variables the script fills in later are code, not literals", () => {
+  const src = `<div id="a"></div><script>
+  const xs = [1, 2, 3];
+  const ys = [];
+  for (const x of xs) ys.push(x * 2);
+  const layout = {title: 'T'};
+  layout.height = 300;
+  const keep = ['a'];
+  const f = keep.map((keep) => keep);
+  Plotly.newPlot('a', [{x: xs, y: ys, text: keep}], layout);
+  </script>`;
+  const [c] = findCharts(new Doc(src)).map(describe);
+  assert.deepStrictEqual(c.specs[0].value[0].x, [1, 2, 3]);
+  assert.strictEqual(c.specs[0].value[0].y, RAW_MARK + "ys");
+  assert.deepStrictEqual(c.specs[0].value[0].text, ["a"], "arrow param named keep is not a write");
+  assert.ok(c.specs[1].opaque, "layout is changed later → opaque");
+});

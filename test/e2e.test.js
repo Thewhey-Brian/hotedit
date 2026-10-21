@@ -111,6 +111,12 @@ test("script-rendered math opens source editor and saves source", async () => {
     "rendered KaTeX never leaks into the file",
   );
   assert.ok(s.read().includes("c_{\\text{target}}"));
+  // The page reloads so KaTeX renders the new source.
+  await page.waitForFunction(
+    () => [...document.querySelectorAll(".katex annotation")].some((a) => a.textContent.includes("c_{\\text{target}}")),
+    null,
+    { timeout: 15000 },
+  );
   await s.close();
 });
 

@@ -3,7 +3,9 @@
 **Edit any HTML file in your browser — text, styles, layout and charts — and save the
 changes straight back into the file.** Built for the HTML reports that AI assistants write.
 
-![hotedit demo: edit text, restyle, change a chart, drag a list item, add an item, leave a note](https://raw.githubusercontent.com/Thewhey-Brian/htmledit/main/demo/htmledit-demo.gif)
+![hotedit tour: edit text, restyle, change Plotly, Chart.js, Vega-Lite and Mermaid charts, edit maths, add and drag blocks, leave a note for the AI agent](https://raw.githubusercontent.com/Thewhey-Brian/htmledit/main/demo/hotedit-demo.gif)
+
+▶ [Watch the full 90-second tour (MP4)](https://github.com/Thewhey-Brian/htmledit/raw/main/demo/hotedit-tour.mp4) · or try it yourself: `npx hotedit demo`
 
 AI assistants produce a lot of HTML: reports, dashboards, summaries. They look great, but
 fixing a typo, renaming a chart title or moving a section means digging through thousands
@@ -21,6 +23,12 @@ npx hotedit report.html
 
 Your browser opens the page. Press **E** (or click **✎ Edit**), click any text and type.
 Changes are saved into `report.html` as you go, and **⌘Z / Ctrl+Z** undoes them.
+
+Just want to see it? Open a sample report (charts, maths, diagrams) in a throwaway copy:
+
+```bash
+npx hotedit demo
+```
 
 Not sure which file? Run it with no file and click one from the list:
 
@@ -134,7 +142,7 @@ git clone https://github.com/Thewhey-Brian/htmledit && cd htmledit
 npm install
 npx playwright install chromium   # browser for the end-to-end tests
 npm test                          # unit, CLI and real-browser tests (~3 min)
-node demo/record.js               # re-record the demo GIF (needs ffmpeg)
+node demo/record.js               # re-record the tour video + GIF (needs ffmpeg)
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 — 2026-10-20
+
+- `hotedit demo`: open a rich sample report (Plotly, Chart.js, Vega-Lite,
+  Mermaid, KaTeX) in a throwaway copy.
+- New recorded tour (`demo/hotedit-tour.mp4`, README GIF).
+- Chart variables that the script fills in later (`ys.push(…)`,
+  `layout.height = …`) are treated as code instead of showing their empty
+  initial value.
+- After saving a block's source (maths, diagrams, Edit HTML) the page
+  reloads so the new version renders; the source box fits its content.
+
 ## 0.1.0 — 2026-10-20
 
 First public release.

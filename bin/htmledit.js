@@ -22,6 +22,7 @@ const USAGE = `hotedit ${pkg.version} — edit any HTML file in your browser; ch
   hotedit report.html          open report.html for editing (press E, click text, type)
   hotedit                      list the HTML files in this folder; click one to edit
   hotedit some/folder          the same, for another folder
+  hotedit demo                 try it on a sample report (a throwaway copy; or --demo)
 
   hotedit comments report.html [--json] [--all]
                                 notes left with 💬 (markdown for your AI agent)
@@ -111,6 +112,16 @@ function cmdSkill(opt) {
   console.log("Claude Code will now write edit-friendly HTML reports and pick up your 💬 notes.");
 }
 
+async function cmdDemo(opt) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hotedit-demo-"));
+  const file = path.join(dir, "aurora_report.html");
+  fs.copyFileSync(path.join(__dirname, "..", "demo", "showcase.html"), file);
+  console.log("hotedit demo: a sample AI-generated report with charts, maths and diagrams.");
+  console.log(`  It's a throwaway copy (${file}); edit anything.`);
+  opt._ = [file];
+  return cmdOpen(opt);
+}
+
 async function cmdOpen(opt) {
   const target = opt._[0] || ".";
   if (!fs.existsSync(target)) fail(`no such file or folder: ${target}`);
@@ -139,6 +150,8 @@ async function main(argv) {
   if (opt.version || opt.v) return console.log(pkg.version);
   if (opt._[0] === "comments") return cmdComments(opt);
   if (opt._[0] === "skill") return cmdSkill(opt);
+  // `hotedit demo` (unless ./demo is a folder you meant to open) or --demo.
+  if (opt.demo || (opt._[0] === "demo" && !fs.existsSync("demo"))) return cmdDemo(opt);
   return cmdOpen(opt);
 }
 
