@@ -443,7 +443,9 @@
   };
 
   // `sel`: id to select after reload (null = none, undefined = current).
+  let reloading = false;
   const reload = (sel) => {
+    reloading = true;
     sessionStorage.setItem("he-scroll", String(window.scrollY));
     const keep = sel === undefined ? selected && idOf(selected) : sel;
     if (keep != null) sessionStorage.setItem("he-sel", String(keep));
@@ -612,11 +614,32 @@
     const chart = chartAt(el);
     if (chart) return openChart(chart, el);
     const id = Number(idOf(el));
+    // Plain HTML blocks become editable at once, so typing straight after
+    // the click isn't lost; the source check below confirms (or undoes) it.
+    const plain = !(el instanceof SVGElement) && !/^(IMG|BR|HR|INPUT|IFRAME|VIDEO|CANVAS|SCRIPT|STYLE)$/.test(el.tagName);
+    let checked;
+    const early = plain ? startTyping(el, id, opts, point) : null;
+    if (early) early.check = new Promise((r) => (checked = r));
     let sig;
     try {
       sig = await sigOf(el);
     } catch (e) {
+      if (early) {
+        checked(false);
+        if (editing === early) finish(false);
+      }
       return say(e.message, true);
+    }
+    if (early) {
+      const ok = domMatchesSource(early.snap, sig);
+      checked(ok);
+      if (ok) return;
+      if (editing === early) await finish(false);
+      return openSource(
+        el,
+        sig,
+        "This block was rewritten by a page script (math, diagram, widget…). Edit its HTML source:",
+      );
     }
     if (el instanceof SVGElement) {
       if (SVG_TEXT.has(sig.tag) && sig.ids.length === 0)
@@ -631,14 +654,11 @@
     }
     if (/^(img|br|hr|input|iframe|video|canvas|script|style)$/.test(sig.tag))
       return say(`<${sig.tag}> selected`);
-    if (!domMatchesSource(el, sig)) {
-      return openSource(
-        el,
-        sig,
-        "This block was rewritten by a page script (math, diagram, widget…). Edit its HTML source:",
-      );
-    }
-    editing = { el, id, before: el.innerHTML, fresh: !!opts.fresh };
+  };
+
+  const startTyping = (el, id, opts, point) => {
+    // `snap`: the block as it was, for the source check.
+    editing = { el, id, before: el.innerHTML, fresh: !!opts.fresh, snap: el.cloneNode(true) };
     caretStyle.textContent = `[data-he="${id}"][contenteditable]{caret-color:${caretFor(el)}!important}`;
     document.head.appendChild(caretStyle);
     el.setAttribute("contenteditable", "true");
@@ -647,6 +667,7 @@
     placeCaret(el, opts.selectAll);
     clickAt = null;
     say("Typing — Enter saves · Esc cancels");
+    return editing;
   };
 
   const caretAtEnd = (el) => {
@@ -660,7 +681,7 @@
 
   const finish = async (save) => {
     if (!editing) return;
-    const { el, id, before } = editing;
+    const { el, id, before, check } = editing;
     editing = null;
     el.removeAttribute("contenteditable");
     caretStyle.remove();
@@ -668,6 +689,11 @@
       el.innerHTML = before;
       if (stale) return reload();
       return say("No change");
+    }
+    // Left before the source check came back: never save a script's output.
+    if (check && !(await check)) {
+      el.innerHTML = before;
+      return say("That block is drawn by a script — click it again to edit its source", true);
     }
     await commit("/edit", { edits: [{ id, html: el.innerHTML }] }, () => {
       el.innerHTML = before;
@@ -2128,7 +2154,7 @@ ${lib}<script>
       e.preventDefault();
       e.stopPropagation();
       if (Date.now() - dragEndedAt < 400) return;
-      if (modal) return;
+      if (modal) return switchFromPanel(e);
       if (editing) finish(true);
       const el = pick(e.target);
       showHover(null);
@@ -2138,6 +2164,23 @@ ${lib}<script>
     },
     true,
   );
+
+  // Clicking another block while a panel is open saves the panel (like
+  // Apply) and goes straight on to the clicked block.
+  const switchFromPanel = async (e) => {
+    const next = pick(e.target);
+    if (!next || next === selected || (selected && selected.contains(next) && chartAt(selected))) return;
+    const m = modal;
+    // If saving reloads the page, pick the block up again afterwards.
+    sessionStorage.setItem("he-next", `${VERSION}:${idOf(next)}`);
+    closePanel(true);
+    if (m.save) await m.save();
+    if (reloading) return; // the reloaded page opens `next`
+    sessionStorage.removeItem("he-next");
+    showHover(null);
+    clickAt = { x: e.clientX, y: e.clientY };
+    begin(next);
+  };
 
   document.addEventListener(
     "focusout",
@@ -2240,7 +2283,12 @@ ${lib}<script>
     sessionStorage.removeItem("he-sel");
     const fresh = sessionStorage.getItem("he-begin");
     sessionStorage.removeItem("he-begin");
-    if (editMode && s != null) {
+    const nx = (sessionStorage.getItem("he-next") || "").split(":");
+    sessionStorage.removeItem("he-next");
+    if (editMode && nx[0] === String(VERSION)) {
+      const el = document.querySelector(`[data-he="${nx[1]}"]`);
+      if (el) setTimeout(() => begin(el), 0);
+    } else if (editMode && s != null) {
       const el = document.querySelector(`[data-he="${s}"]`);
       select(el);
       if (fresh && el) startNew(el, fresh);

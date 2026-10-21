@@ -16,6 +16,10 @@
   in the header; settings in grouped rows with switches and pop-up menus;
   Style · Data · Code as a segmented control; faster live preview. Round
   Chart.js types set the x/y axes aside and restore them on the way back.
+- Click from block to block: the block you click is editable immediately
+  (keystrokes right after the click are no longer lost while the previous
+  save is in flight), and clicking another block while a panel is open
+  (style, chart, HTML source, link) saves it and moves straight on.
 - The text caret takes each block's colour, or black/white against its
   background, so it shows on dark, coloured and gradient sections; selection
   outlines show on any background.
