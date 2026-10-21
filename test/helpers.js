@@ -11,6 +11,8 @@ const { start } = require("../src/server");
 const SAMPLES = process.env.HTMLEDIT_SAMPLES || path.join(__dirname, "reports");
 // Keep test-session backups out of the user's ~/.htmledit.
 process.env.HTMLEDIT_BACKUP_DIR ||= fs.mkdtempSync(path.join(os.tmpdir(), "htmledit-backups-"));
+// …and AI settings / the open-pages registry out of ~/.htmledit too.
+process.env.HTMLEDIT_STATE_DIR ||= fs.mkdtempSync(path.join(os.tmpdir(), "htmledit-state-"));
 const FIXTURES = path.join(__dirname, "fixtures");
 const NM = path.join(__dirname, "..", "node_modules");
 // Chart libraries for fixtures, served from a lib/ dir next to the page.

@@ -10,6 +10,7 @@ const { startLauncher, findHtml } = require("../src/launcher");
 
 // Sessions started here (and by spawned CLIs) keep backups out of ~/.htmledit.
 process.env.HTMLEDIT_BACKUP_DIR ||= fs.mkdtempSync(path.join(os.tmpdir(), "htmledit-backups-"));
+process.env.HTMLEDIT_STATE_DIR ||= fs.mkdtempSync(path.join(os.tmpdir(), "htmledit-state-"));
 const ROOT = path.join(__dirname, "..");
 const CLI = path.join(ROOT, "bin", "htmledit.js");
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "htmledit-cli-"));

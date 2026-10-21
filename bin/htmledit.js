@@ -25,7 +25,7 @@ const USAGE = `hotedit ${pkg.version} — edit any HTML file in your browser; ch
   hotedit demo                 try it on a sample report (a throwaway copy; or --demo)
 
   hotedit comments report.html [--json] [--all]
-                                notes left with 💬 (markdown for your AI agent)
+                                notes left in the page (markdown for your AI agent)
   hotedit comments report.html --wait [--timeout SECONDS]
                                 wait until a note arrives, then print it
   hotedit comments report.html --resolve <id> [--note TEXT]
@@ -35,6 +35,9 @@ const USAGE = `hotedit ${pkg.version} — edit any HTML file in your browser; ch
                                 install the agent skill for Claude Code
                                 (~/.claude/skills/hotedit, or ./.claude/skills with --project)
   hotedit skill print          print the skill text (for other agents, e.g. AGENTS.md)
+
+  hotedit mcp                  MCP server: lets a coding agent open pages and edit them live
+                                (claude mcp add hotedit -- npx -y hotedit mcp)
 
 options: --port N   --no-open   --version   --help
 `;
@@ -144,12 +147,23 @@ async function cmdOpen(opt) {
   if (!opt["no-open"]) openBrowser(url);
 }
 
+function cmdMcp() {
+  const { createMcp, serveStdio } = require("../src/mcp");
+  const { registry } = require("../src/server");
+  // Started by the in-app agent: pinned to that one page.
+  const pinned = process.env.HOTEDIT_URL ? { file: null, url: process.env.HOTEDIT_URL, token: process.env.HOTEDIT_TOKEN } : null;
+  // stdout is the protocol; keep server logs off it.
+  console.log = console.error;
+  serveStdio(createMcp({ registry, start: (f) => start(f), openBrowser, pinned, version: pkg.version }));
+}
+
 async function main(argv) {
   const opt = parse(argv.slice(2));
   if (opt.help || opt.h) return process.stdout.write(USAGE);
   if (opt.version || opt.v) return console.log(pkg.version);
   if (opt._[0] === "comments") return cmdComments(opt);
   if (opt._[0] === "skill") return cmdSkill(opt);
+  if (opt._[0] === "mcp") return cmdMcp();
   // `hotedit demo` (unless ./demo is a folder you meant to open) or --demo.
   if (opt.demo || (opt._[0] === "demo" && !fs.existsSync("demo"))) return cmdDemo(opt);
   return cmdOpen(opt);

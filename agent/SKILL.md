@@ -7,7 +7,7 @@ description: Use whenever you generate an HTML report, dashboard or page for the
 
 The user edits HTML in the browser with **hotedit**. They click text and type, restyle and
 drag blocks around, and tweak charts in a form. Every change is saved back into the file as
-a small patch. Anything bigger, they leave as a 💬 note for you.
+a small patch. They can also ask Claude from inside the page (✨), or leave you a note.
 
 ## 1. When you write an HTML report, make it easy to edit
 
@@ -38,7 +38,20 @@ Then: press **E**, click any text to edit, and select a block for its toolbar (�
 style, drag ⠿ to move, 📊 chart). Don't launch it yourself unless they ask, because it opens
 a browser and keeps a server running.
 
-## 3. Act on their notes
+## 3. Edit live with the hotedit MCP tools (if you have them)
+
+If tools named `hotedit` (`open`, `outline`, `read`, `edit`, `notes`, `resolve_note`) are
+available, prefer them for changes to a report the user is looking at:
+
+1. `open` the file: it appears in the user's browser (or is already open there).
+2. `outline` to find elements, `read` an element for its exact source, then `edit`
+   (exact find/replace). Each edit is saved and shown to the user at once, so make small,
+   targeted edits and leave the rest of the file alone.
+
+Without them, edit the file directly; an open hotedit page reloads live on its own.
+To set the tools up: `claude mcp add hotedit -- npx -y hotedit mcp`.
+
+## 4. Act on their notes
 
 When the user mentions notes or comments, or asks you to "check the report":
 
@@ -48,11 +61,12 @@ hotedit comments report.html --json     # the same, machine-readable (`at` = ele
 hotedit comments report.html --wait --timeout 1800   # wait for the next note
 ```
 
-For each note:
+Or use the `notes` tool. For each note:
 
 1. Edit the HTML file to do what it asks. Small, targeted edits are best: the user's other
    hand edits are in the file too, and the open editor reloads live.
-2. Run `hotedit comments report.html --resolve <id> --note "<what you did>"`.
+2. Run `hotedit comments report.html --resolve <id> --note "<what you did>"` (or the
+   `resolve_note` tool).
 
 Never edit `.htmledit/*.comments.json` by hand; always use the CLI. If `hotedit` isn't on
 the PATH, use `npx hotedit comments …`.

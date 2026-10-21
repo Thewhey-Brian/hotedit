@@ -1,7 +1,7 @@
 {
   "name": "hotedit",
-  "version": "0.2.0",
-  "description": "Edit any HTML file in your browser \u2014 text, styles, layout, charts \u2014 and save the changes back into the file as small, clean patches. Built for AI-generated reports.",
+  "version": "0.3.0",
+  "description": "Edit any HTML file in your browser — text, styles, layout, charts — and save the changes back into the file as small, clean patches. Built for AI-generated reports.",
   "keywords": [
     "html",
     "editor",
@@ -16,7 +16,8 @@
     "vega-lite",
     "mermaid",
     "claude-code",
-    "agent"
+    "agent",
+    "mcp"
   ],
   "homepage": "https://github.com/Thewhey-Brian/htmledit#readme",
   "bugs": {
@@ -51,8 +52,9 @@
     "test:unit": "node --test test/doc.test.js test/charts.test.js test/chartform.test.js test/comments.test.js"
   },
   "dependencies": {
-    "parse5": "^7.3.0",
-    "entities": "^6.0.1"
+    "@anthropic-ai/sdk": "^0.137.0",
+    "entities": "^6.0.1",
+    "parse5": "^7.3.0"
   },
   "devDependencies": {
     "chart.js": "^4.5.1",

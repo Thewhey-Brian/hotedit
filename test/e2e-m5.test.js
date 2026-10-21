@@ -20,7 +20,8 @@ test("comment on a real report → sidecar + CLI markdown; agent edit + resolve 
   await h3.click();
   await page.waitForFunction(() => window.__htmledit.selected && window.__htmledit.selected.isContentEditable);
   await page.keyboard.press("Escape");
-  await ui(page, '[data-act="comment"]').click();
+  await ui(page, '[data-act="ai"]').click();
+  await ui(page, ".agentp .tonote").click();
   await ui(page, ".cmtp textarea").fill("Make this claim more cautious");
   await ui(page, ".cmtp .save").click();
   assert.ok(await until(() => comments.load(s.file).length === 1));
@@ -58,7 +59,8 @@ test("comment list: copy for agent puts markdown on the clipboard", async () => 
     getSelection().removeAllRanges();
     getSelection().addRange(r);
   });
-  await ui(page, '[data-act="comment"]').click();
+  await ui(page, '[data-act="ai"]').click();
+  await ui(page, ".agentp .tonote").click();
   await ui(page, ".cmtp textarea").fill("Rename");
   await ui(page, ".cmtp textarea").press("Meta+Enter");
   assert.ok(await until(() => comments.load(s.file).length === 1));

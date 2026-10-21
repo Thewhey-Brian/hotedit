@@ -139,16 +139,48 @@
   .sty summary::before { content: "▸ "; color: #71717a; }
   .sty details[open] > summary::before { content: "▾ "; }
   .sty .grid { margin: 4px 0 6px; }
+  .box { box-shadow: 0 0 0 1px rgba(255,255,255,.85), 0 0 0 3px rgba(0,0,0,.12); }
+  .flash { position: fixed; pointer-events: none; z-index: 2147483645; border-radius: 6px; display: none;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #a855f7, 0 0 28px 8px rgba(168,85,247,.45); animation: heflash 1.8s ease-out forwards; }
+  @keyframes heflash { 0% { opacity: 0 } 12% { opacity: 1 } 70% { opacity: 1 } 100% { opacity: 0 } }
+  .aibtn { background: linear-gradient(135deg, #7c3aed, #2563eb); }
+  .aibtn:hover { background: linear-gradient(135deg, #8b5cf6, #3b82f6); }
+  .agentp { right: 12px; bottom: 12px; width: 360px; max-height: calc(100vh - 80px); overflow: auto; }
+  .agentp textarea { height: 76px; font: 13px/1.4 -apple-system, system-ui, sans-serif; resize: vertical; }
+  .agentp .scope { display: flex; gap: 6px; align-items: center; margin: 0 0 8px; color: #a1a1aa; font-size: 12px; }
+  .agentp .scope .about { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .agentp .scope button { padding: 3px 8px; font-size: 12px; }
+  .agentp .row { flex-wrap: wrap; }
+  .agentp .gear { margin-right: auto; background: transparent; color: #a1a1aa; padding: 5px 6px; }
+  .agentp .gear:hover { color: #fafafa; }
+  .agentp .log { margin-top: 10px; font-size: 12.5px; line-height: 1.45; display: none; border-top: 1px solid #27272a; padding-top: 8px; }
+  .agentp .log .q { color: #a1a1aa; font-style: italic; margin-bottom: 4px; }
+  .agentp .log .tool, .agentp .log .undo { color: #71717a; }
+  .agentp .log .edit { color: #4ade80; }
+  .agentp .log .error { color: #f87171; }
+  .agentp .log .text { color: #e4e4e7; margin: 4px 0; white-space: pre-wrap; }
+  .agentp .working::after { content: " ●"; animation: hedot 1s infinite; color: #a855f7; }
+  @keyframes hedot { 50% { opacity: .2 } }
+  .agentp .conn { display: none; }
+  .agentp .opt { display: block; border: 1px solid #3f3f46; border-radius: 8px; padding: 8px 10px; margin: 0 0 8px; cursor: pointer; }
+  .agentp .opt input { width: auto; margin: 0 6px 0 0; accent-color: #7c3aed; }
+  .agentp .opt .d { float: right; font-size: 11px; color: #71717a; }
+  .agentp .opt .d.ok { color: #4ade80; }
+  .agentp .opt .msg { display: block; margin: 4px 0 0 22px; font-size: 12px; }
+  .agentp .opt input[type=password], .agentp .opt input[type=text] { width: calc(100% - 22px); margin: 6px 0 0 22px; }
+  .agentp code { font: 11.5px ui-monospace, monospace; background: #27272a; padding: 1px 4px; border-radius: 4px; }
 </style>
 <div class="box hov"><span class="tag"></span></div>
 <div class="box sel"></div>
 <div class="box drag"></div>
 <div class="drop"></div>
+<div class="flash"></div>
 <div class="ghost"></div>
 <div class="bar">
   <button class="edit" title="Turn editing on or off (E)">✎ Edit</button>
   <button class="undo" title="Undo the last saved change (⌘Z)">↶</button>
   <button class="redo" title="Redo (⇧⌘Z)">↷</button>
+  <button class="aibtn" title="Ask AI to change the page — it edits live">✨ AI</button>
   <button class="cbtn" title="Notes for your AI agent">💬 0</button>
   <span class="status">hotedit</span>
 </div>
@@ -166,7 +198,7 @@
   <button data-act="image" title="Replace image">🖼</button>
   <button data-act="link" title="Change link">🔗</button>
   <button data-act="chart" title="Edit chart">📊</button>
-  <button data-act="comment" title="Leave a note for your AI agent">💬</button>
+  <button data-act="ai" title="Ask AI to change this (or leave a note)">✨</button>
   <button data-act="more" title="More: move, duplicate, hide, delete, HTML">⋯</button>
 </div>
 <div class="menu more">
@@ -209,6 +241,27 @@
   <h4>Notes for your AI agent</h4>
   <div class="list"></div>
   <div class="row"><button class="close">Close</button><button class="primary copy">Copy for agent</button></div>
+</div>
+<div class="panel agentp">
+  <button class="x" title="Close">✕</button>
+  <h4>✨ Ask AI</h4>
+  <div class="ask">
+    <div class="scope"><span class="about"></span><button class="whole" title="Ask about the whole page instead">Whole page</button></div>
+    <textarea spellcheck="true" placeholder="What should change? e.g. “Make this shorter and friendlier”, “Turn the bars orange”, “Add a row for March”"></textarea>
+    <div class="row"><button class="gear" title="Choose how hotedit reaches Claude">⚙ Connect</button><button class="tonote" title="Save it as a note for later instead">Leave as note</button><button class="primary go" title="⌘Enter">Do it</button></div>
+  </div>
+  <div class="log"></div>
+  <div class="row after"><button class="undoai">↶ Undo AI changes</button><button class="stop">■ Stop</button></div>
+  <div class="conn">
+    <p class="msg">How should hotedit reach Claude? The AI edits this page live and every change can be undone.</p>
+    <label class="opt"><input type="radio" name="he-prov" value="claude"><b>Claude login</b><span class="d" data-d="claude"></span>
+      <span class="msg">Uses your Claude plan through Claude Code. Install it from <code>claude.com/code</code>, run <code>claude</code> once and log in.</span></label>
+    <label class="opt"><input type="radio" name="he-prov" value="api"><b>Anthropic API key</b><span class="d" data-d="api"></span>
+      <span class="msg">Pay per use. Saved only on this computer (<code>~/.htmledit/config.json</code>), or set <code>ANTHROPIC_API_KEY</code>.</span>
+      <input class="key" type="password" placeholder="sk-ant-…" autocomplete="off"></label>
+    <input class="model" type="text" placeholder="Model (optional; e.g. claude-opus-5-5)">
+    <div class="row"><button class="back">Back</button><button class="primary savec">Save</button></div>
+  </div>
 </div>
 <div class="panel sty">
   <h4>Style <span class="msg sty-tag"></span></h4>
@@ -254,6 +307,44 @@
     "[hidden][data-he]{display:block!important;opacity:.35;outline:2px dashed #f59e0b}" +
     "body [data-he]{cursor:text}[data-he][contenteditable]{caret-color:#2563eb;outline:none}" +
     "body img[data-he],body svg[data-he],body canvas[data-he],body .js-plotly-plot{cursor:pointer}";
+
+  // The caret takes the block's text colour, or black/white against its
+  // background when the text colour wouldn't show (e.g. gradient text).
+  const caretStyle = document.createElement("style");
+  const rgba = (s) => {
+    const m = /rgba?\(([^)]+)\)/.exec(s || "");
+    if (!m) return null;
+    const p = m[1].split(/[\s,/]+/).filter(Boolean).map(parseFloat);
+    return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+  };
+  const lum = (c) => {
+    const f = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+  };
+  const bgOf = (el) => {
+    for (let e = el; e && e.nodeType === 1; e = e.parentElement) {
+      const cs = getComputedStyle(e);
+      const c = rgba(cs.backgroundColor);
+      if (c && c.a > 0.5) return c;
+      const stops = [...(cs.backgroundImage || "").matchAll(/rgba?\([^)]+\)/g)].map((m) => rgba(m[0])).filter((x) => x && x.a > 0.3);
+      if (stops.length) {
+        const n = stops.length;
+        return stops.reduce((a, x) => ({ r: a.r + x.r / n, g: a.g + x.g / n, b: a.b + x.b / n, a: 1 }), { r: 0, g: 0, b: 0, a: 1 });
+      }
+    }
+    return { r: 255, g: 255, b: 255, a: 1 };
+  };
+  const caretFor = (el) => {
+    const cs = getComputedStyle(el);
+    const bg = bgOf(el);
+    const fill = rgba(cs.webkitTextFillColor);
+    const text = fill && fill.a < 0.5 ? fill : rgba(cs.color);
+    if (text && text.a >= 0.6) {
+      const [hi, lo] = [lum(text), lum(bg)].sort((a, b) => b - a);
+      if ((hi + 0.05) / (lo + 0.05) >= 3) return `rgb(${text.r}, ${text.g}, ${text.b})`;
+    }
+    return lum(bg) > 0.35 ? "#111827" : "#ffffff";
+  };
 
   let editMode = sessionStorage.getItem("he-edit") === "1";
   let hover = null;
@@ -377,6 +468,11 @@
     selected = el;
     hideMenu();
     showSelected();
+    // An open ✨ panel follows the selection (unless the AI is mid-request).
+    if (el && ag.style.display === "block" && !(agJob && agJob.status === "running")) {
+      agTarget = el;
+      agScope();
+    }
   };
   // "⋯" menu: the less frequent block actions, with words.
   const menu = $(".menu.more");
@@ -474,6 +570,8 @@
       );
     }
     editing = { el, id, before: el.innerHTML, fresh: !!opts.fresh };
+    caretStyle.textContent = `[data-he="${id}"][contenteditable]{caret-color:${caretFor(el)}!important}`;
+    document.head.appendChild(caretStyle);
     el.setAttribute("contenteditable", "true");
     el.focus();
     clickAt = point;
@@ -496,6 +594,7 @@
     const { el, id, before } = editing;
     editing = null;
     el.removeAttribute("contenteditable");
+    caretStyle.remove();
     if (!save || el.innerHTML === before) {
       el.innerHTML = before;
       if (stale) return reload();
@@ -781,6 +880,7 @@
       srcIn.focus();
     },
     comment: () => addComment(selected),
+    ai: () => openAgent(selected),
     chart: () => {
       const c = chartAt(selected);
       if (c) openChart(c, selected);
@@ -1559,7 +1659,7 @@ ${lib}<script>
   const renderList = (focus) => {
     const list = $(".cmts .list");
     list.innerHTML = "";
-    if (!comments.length) list.textContent = "No open comments. Select a block and press 💬 to add one.";
+    if (!comments.length) list.textContent = "No open notes. Select a block, press ✨, then Leave as note.";
     comments.forEach((c, i) => {
       const item = document.createElement("div");
       item.className = "citem" + (c.id === focus ? " focus" : "");
@@ -1637,6 +1737,182 @@ ${lib}<script>
       }
     });
     ta.focus();
+  };
+
+  // ---------- ✨ AI agent: edits the page live ----------
+  const ag = $(".agentp");
+  const agTa = $(".agentp textarea");
+  const agLog = $(".agentp .log");
+  let agTarget = null; // element the request is about (null = whole page)
+  let agInfo = null;
+  let agJob = null;
+  const agShow = (on) => {
+    ag.style.display = on ? "block" : "none";
+    sessionStorage.setItem("he-ai", on ? "1" : "0");
+  };
+  const agScope = () => {
+    const ok = agTarget && agTarget.isConnected;
+    if (!ok) agTarget = null;
+    const words = agTarget ? (agTarget.textContent || "").trim().replace(/\s+/g, " ").slice(0, 50) : "";
+    $(".agentp .about").textContent = agTarget ? `About: ${nameOf(agTarget)}${words ? ` “${words}”` : ""}` : "About: the whole page";
+    $(".agentp .whole").style.display = agTarget ? "" : "none";
+    $(".agentp .tonote").style.display = agTarget ? "" : "none";
+    sessionStorage.setItem("he-ai-target", agTarget ? `${VERSION}:${idOf(agTarget)}` : "");
+  };
+  const agConn = (on) => {
+    $(".agentp .conn").style.display = on ? "block" : "none";
+    $(".agentp .ask").style.display = on ? "none" : "block";
+    if (on) agLog.style.display = "none";
+    else agRender();
+    if (!on || !agInfo) return;
+    for (const p of agInfo.providers) {
+      const d = $(`.agentp .d[data-d="${p.id}"]`);
+      d.textContent = p.detail;
+      d.classList.toggle("ok", p.available);
+    }
+    const r = root.querySelector(`.agentp input[value="${agInfo.provider || "claude"}"]`);
+    if (r) r.checked = true;
+    $(".agentp .model").value = agInfo.model || "";
+    $(".agentp .key").value = "";
+  };
+  const agLoad = async () => {
+    agInfo = await api("GET", "/agent");
+    if (agInfo.job) agJob = agInfo.job;
+    $(".agentp .gear").textContent = agInfo.provider ? `⚙ ${agInfo.provider === "api" ? "API key" : "Claude login"}` : "⚙ Connect AI";
+    return agInfo;
+  };
+  const agRender = () => {
+    const j = agJob;
+    const running = j && j.status === "running";
+    agLog.style.display = j ? "block" : "none";
+    agTa.disabled = !!running;
+    $(".agentp .go").style.display = running ? "none" : "";
+    $(".agentp .stop").style.display = running ? "" : "none";
+    $(".agentp .undoai").style.display = j && !running && j.edits > 0 ? "" : "none";
+    $(".agentp .after").style.display = running || (j && j.edits > 0) ? "" : "none";
+    if (!j) return;
+    agLog.innerHTML = "";
+    const add = (cls, text) => {
+      const d = document.createElement("div");
+      d.className = cls;
+      d.textContent = text;
+      agLog.appendChild(d);
+    };
+    add("q", "“" + j.prompt + "”");
+    for (const e of j.log) add(e.t, e.t === "edit" ? "✓ " + e.s : e.t === "tool" ? "· " + e.s : e.s);
+    if (running) add("tool working", "Working");
+    else if (j.status === "done") add("tool", j.edits ? `Done · ${j.edits} change${j.edits > 1 ? "s" : ""} saved` : "Done · no changes");
+    else if (j.status === "stopped") add("tool", "Stopped");
+  };
+  const openAgent = async (el) => {
+    agTarget = el || null;
+    agShow(true);
+    agScope();
+    try {
+      await agLoad();
+    } catch (e) {
+      return say(e.message, true);
+    }
+    agConn(false);
+    agTa.focus();
+  };
+  $(".aibtn").onclick = () => (ag.style.display === "block" ? agShow(false) : openAgent(selected));
+  $(".agentp .x").onclick = () => agShow(false);
+  $(".agentp .whole").onclick = () => {
+    agTarget = null;
+    agScope();
+  };
+  $(".agentp .gear").onclick = async () => {
+    await agLoad().catch(() => {});
+    agConn(true);
+  };
+  $(".agentp .back").onclick = () => agConn(false);
+  $(".agentp .key").onfocus = () => (root.querySelector('.agentp input[value="api"]').checked = true);
+  $(".agentp .savec").onclick = async () => {
+    const prov = root.querySelector(".agentp input[name=he-prov]:checked");
+    const body = { provider: prov ? prov.value : "", model: $(".agentp .model").value };
+    if ($(".agentp .key").value.trim()) body.apiKey = $(".agentp .key").value.trim();
+    try {
+      await api("POST", "/agent/config", body);
+      await agLoad();
+      const p = agInfo.providers.find((x) => x.id === agInfo.provider);
+      if (p && !p.available) return say(p.id === "api" ? "Paste an API key first" : "Install Claude Code first, then run `claude` to log in", true);
+      say("AI connected ✓");
+      agConn(false);
+      agTa.focus();
+    } catch (e) {
+      say(e.message, true);
+    }
+  };
+  agTa.oninput = () => sessionStorage.setItem("he-ai-draft", agTa.value);
+  agTa.onkeydown = (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      $(".agentp .go").click();
+    }
+  };
+  $(".agentp .go").onclick = async () => {
+    const prompt = agTa.value.trim();
+    if (!prompt) return agTa.focus();
+    if (agInfo && !agInfo.provider) return agConn(true);
+    if (editing) await finish(true);
+    try {
+      const r = await api("POST", "/agent/run", { prompt, id: agTarget ? Number(idOf(agTarget)) : null, version: VERSION });
+      if (r.stale) return reload();
+      agJob = r;
+      agTa.value = "";
+      sessionStorage.removeItem("he-ai-draft");
+      agRender();
+    } catch (e) {
+      if (/Connect an AI/.test(e.message)) return agConn(true);
+      say(e.message, true);
+    }
+  };
+  $(".agentp .tonote").onclick = () => {
+    const el = agTarget;
+    const text = agTa.value;
+    agShow(false);
+    if (!el) return;
+    select(el);
+    addComment(el);
+    $(".cmtp textarea").value = text;
+  };
+  $(".agentp .stop").onclick = () => api("POST", "/agent/stop").catch((e) => say(e.message, true));
+  $(".agentp .undoai").onclick = async () => {
+    try {
+      const r = await api("POST", "/agent/undo");
+      if (r.changed) reload();
+    } catch (e) {
+      say(e.message, true);
+    }
+  };
+  // Glow on what the AI just changed, after the page reloads to show it.
+  const flash = (id) => {
+    const el = id != null && document.querySelector(`[data-he="${id}"]`);
+    if (!el) return;
+    let r = el.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > innerHeight) {
+      el.scrollIntoView({ block: "center" });
+      r = el.getBoundingClientRect();
+    }
+    const f = $(".flash");
+    Object.assign(f.style, { display: "block", left: r.left - 4 + "px", top: r.top - 4 + "px", width: r.width + 8 + "px", height: r.height + 8 + "px" });
+    f.style.animation = "none";
+    void f.offsetWidth;
+    f.style.animation = "";
+    setTimeout(() => (f.style.display = "none"), 1900);
+  };
+  const agRestore = async () => {
+    if (sessionStorage.getItem("he-ai") !== "1") return;
+    const t = (sessionStorage.getItem("he-ai-target") || "").split(":");
+    agTarget = t[0] === String(VERSION) ? document.querySelector(`[data-he="${t[1]}"]`) : null;
+    agShow(true);
+    agScope();
+    agTa.value = sessionStorage.getItem("he-ai-draft") || "";
+    try {
+      await agLoad();
+    } catch {}
+    agConn(false);
   };
 
   // ---------- events ----------
@@ -1774,7 +2050,12 @@ ${lib}<script>
   es.onmessage = (m) => {
     const d = JSON.parse(m.data);
     if (d.type === "comments") return loadComments();
+    if (d.type === "agent") {
+      agJob = d.job;
+      return agRender();
+    }
     if (d.type !== "reload" || d.except === CLIENT) return;
+    if (d.flash != null) sessionStorage.setItem("he-flash", String(d.flash));
     if (!editing && !modal) return reload();
     stale = true;
     say("file changed on disk — finish or Esc to reload", true);
@@ -1808,6 +2089,10 @@ ${lib}<script>
     }
     refreshState();
     loadComments();
+    agRestore();
+    const fl = sessionStorage.getItem("he-flash");
+    sessionStorage.removeItem("he-flash");
+    if (fl != null) setTimeout(() => flash(Number(fl)), 150);
     let seen = false;
     try {
       seen = localStorage.getItem("he-hint") === "1";
@@ -1827,6 +2112,8 @@ ${lib}<script>
     setMode,
     select,
     actions,
+    openAgent,
+    caretFor,
     insert: (el, key, where = "after") => doInsert(el, INSERTS.find((i) => i.key === key), where),
     get selected() {
       return selected;

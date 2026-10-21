@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0 — 2026-10-21
+
+- ✨ **Ask AI, live**: select a block (or the whole page), say what should
+  change, and Claude edits the file while you watch; each change glows as it
+  lands, and *Undo AI changes* reverts the request. Connect once with your
+  Claude login (via Claude Code) or an Anthropic API key. Notes moved into the
+  same panel (*Leave as note*).
+- `hotedit mcp`: an MCP server so coding agents (Claude Code, Codex, Cursor…)
+  can open a report in your browser and edit it live (`open`, `outline`,
+  `read`, `edit`, `notes`, `resolve_note`).
+- The text caret takes each block's colour, or black/white against its
+  background, so it shows on dark, coloured and gradient sections; selection
+  outlines show on any background.
+
 ## 0.2.0 — 2026-10-20
 
 - `hotedit demo`: open a rich sample report (Plotly, Chart.js, Vega-Lite,

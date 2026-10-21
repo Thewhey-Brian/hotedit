@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const { Doc, applyPatches } = require("./doc");
 const charts = require("./charts");
 const comments = require("./comments");
+const agent = require("./agent");
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -62,19 +63,20 @@ class Session {
   }
 
   // `structural`: ids shift even if the tag sequence looks the same (moves).
-  write(next, label, structural = false) {
+  // `flashAt`: source offset of the change, for tabs to highlight it.
+  write(next, label, structural = false, flashAt = null) {
     const before = this.src;
     if (next === before) return { changed: false };
     const tags = this.tagList();
     fs.writeFileSync(this.file, next);
     this.lastWritten = next;
     this.undo.push({ before, after: next, label });
-    this.notifyOthers();
     this.redo = [];
     this.load();
     // Element ids shift when the element structure changes; overlay must reload.
     const reload = structural || this.tagList() !== tags;
     if (reload) this.version++;
+    this.notifyOthers(flashAt == null ? null : agent.flashTarget(this.doc, flashAt));
     return { changed: true, reload };
   }
 
@@ -95,8 +97,27 @@ class Session {
   }
 
   // Other tabs on this file must reload, or they'd overwrite this change.
-  notifyOthers() {
-    this.broadcast({ type: "reload", reason: "edited in another tab", except: this.writer });
+  notifyOthers(flash = null) {
+    this.broadcast({ type: "reload", reason: "edited in another tab", except: this.writer, flash });
+  }
+
+  broadcastJob() {
+    if (this.job) this.broadcast({ type: "agent", job: this.job.snapshot() });
+  }
+
+  // Undo the AI's own steps of the last request, newest first.
+  undoAgent() {
+    const job = this.job;
+    if (!job) return { changed: false };
+    let n = 0;
+    while (this.undo.length > job.undoStart && this.undo[this.undo.length - 1].label === "AI edit") {
+      if (!this.history(this.undo, this.redo).changed) break;
+      n++;
+    }
+    job.undoStart = this.undo.length;
+    job.log.push({ t: "undo", s: n ? `Undid ${n} AI change${n > 1 ? "s" : ""}` : "Nothing to undo" });
+    this.broadcastJob();
+    return { changed: n > 0, reload: n > 0 };
   }
 
   broadcast(msg) {
@@ -131,6 +152,51 @@ class Session {
     return `\n<script src="${origin}/__he/overlay.js" data-he-token="${this.token}" data-he-version="${this.version}" data-he-overlay></script>\n`;
   }
 }
+
+// Running sessions, so `hotedit mcp` in an agent can find the open pages.
+const registry = {
+  dir: () => path.join(process.env.HTMLEDIT_STATE_DIR || path.join(os.homedir(), ".htmledit"), "sessions"),
+  name: (s) => `${process.pid}-${new URL(s.url).port}.json`,
+  add(s) {
+    try {
+      fs.mkdirSync(this.dir(), { recursive: true });
+      const f = path.join(this.dir(), this.name(s));
+      fs.writeFileSync(f, JSON.stringify({ file: s.file, url: s.url, token: s.token, pid: process.pid }), { mode: 0o600 });
+      if (!this.hooked) {
+        this.hooked = new Set();
+        process.on("exit", () => {
+          for (const x of this.hooked) this.remove(x);
+        });
+      }
+      this.hooked.add(s);
+    } catch {}
+  },
+  remove(s) {
+    try {
+      fs.unlinkSync(path.join(this.dir(), this.name(s)));
+    } catch {}
+    if (this.hooked) this.hooked.delete(s);
+  },
+  list() {
+    let files = [];
+    try {
+      files = fs.readdirSync(this.dir()).filter((f) => f.endsWith(".json"));
+    } catch {}
+    const out = [];
+    for (const f of files) {
+      try {
+        const e = JSON.parse(fs.readFileSync(path.join(this.dir(), f), "utf8"));
+        process.kill(e.pid, 0); // still running?
+        out.push(e);
+      } catch {
+        try {
+          fs.unlinkSync(path.join(this.dir(), f));
+        } catch {}
+      }
+    }
+    return out;
+  },
+};
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -219,7 +285,7 @@ function createServer(session) {
         return comments.add(session.file, session.doc, b);
       }
       if (b.action === "resolve" || b.action === "reopen") {
-        return comments.update(session.file, b.cid, { status: b.action === "resolve" ? "resolved" : "open" });
+        return comments.update(session.file, b.cid, { status: b.action === "resolve" ? "resolved" : "open", ...(b.note ? { note: String(b.note) } : {}) });
       }
       if (b.action === "edit") return comments.update(session.file, b.cid, { text: b.text });
       if (b.action === "delete") {
@@ -229,6 +295,30 @@ function createServer(session) {
       throw new Error(`unknown action ${b.action}`);
     },
     "GET /comments.md": () => ({ markdown: comments.markdown(session.file, session.doc) }),
+    "GET /agent": () => ({ ...agent.status(), job: session.job ? session.job.snapshot() : null }),
+    "POST /agent/config": (q, b) => {
+      const patch = {};
+      if (b.provider !== undefined) patch.provider = b.provider;
+      if (b.model !== undefined) patch.model = String(b.model).trim();
+      if (b.apiKey !== undefined) patch.apiKey = String(b.apiKey).trim();
+      agent.saveConfig(patch);
+      return agent.status();
+    },
+    "POST /agent/run": (q, b) => {
+      if (b.version != null && b.version !== session.version) return { stale: true };
+      return agent.start(session, b);
+    },
+    "POST /agent/stop": () => agent.stop(session),
+    "POST /agent/undo": () => session.undoAgent(),
+    // The MCP bridge (`hotedit mcp`) calls the same tools over HTTP.
+    "POST /agent/tool": (q, b) => {
+      try {
+        return { text: agent.runTool(session, b.name, b.input || {}) };
+      } catch (e) {
+        return { text: e.message, isError: true };
+      }
+    },
+    "GET /agent/notes": () => ({ markdown: comments.markdown(session.file, session.doc) }),
     "POST /undo": () => session.history(session.undo, session.redo),
     "POST /redo": () => session.history(session.redo, session.undo),
     "GET /state": () => ({
@@ -326,6 +416,8 @@ async function start(file, { port = 0, host = "127.0.0.1" } = {}) {
   timer.unref();
   const stop = () => {
     clearInterval(timer);
+    registry.remove(session);
+    if (session.job) agent.stop(session);
     for (const res of session.clients) res.end();
     server.closeAllConnections();
     return new Promise((r) => server.close(r));
@@ -337,9 +429,11 @@ async function start(file, { port = 0, host = "127.0.0.1" } = {}) {
     });
     server.listen(port, host, () => {
       const url = `http://${host}:${server.address().port}/`;
+      session.url = url;
+      registry.add(session);
       resolve({ server, session, url, stop });
     });
   });
 }
 
-module.exports = { start, Session, createServer };
+module.exports = { start, Session, createServer, registry };
