@@ -1,6 +1,7 @@
 // The built-in AI agent: tools that read and edit the open page (every edit
-// is saved and shows up in the browser at once), and two ways to run them —
-// the user's Claude Code login, or an Anthropic API key.
+// is saved and shows up in the browser at once), and the ways to run them —
+// an agent CLI the user is logged in to (Claude Code, Codex, or any other
+// command that speaks MCP), or an Anthropic API key.
 "use strict";
 const fs = require("fs");
 const os = require("os");
@@ -191,20 +192,59 @@ function runTool(session, name, input = {}) {
       throw new Error(
         `\`find\` appears ${count} times; include more surrounding text, or set all: true`,
       );
+    const job = session.job && session.job.status === "running" ? session.job : null;
+    if (job && job.scope) {
+      for (let i = at; i >= 0; i = src.indexOf(find, i + find.length)) {
+        if (!inScope(session.doc, job.scope, i, i + find.length))
+          throw new Error(
+            "That text is outside the element the person selected; only change the selected element (and, for a chart, its code). If the request needs more, say so in your reply.",
+          );
+        if (!all) break;
+      }
+    }
     const next = all
       ? src.split(find).join(replace)
       : src.slice(0, at) + replace + src.slice(at + find.length);
     session.writer = null;
     const r = session.write(next, "AI edit", false, at);
     if (!r.changed) return "No change (replacement is identical).";
-    if (session.job && session.job.status === "running") {
-      session.job.log.push({ t: "edit", s: describeEdit(session.doc, elementAt(session.doc, at)) });
+    if (job) {
+      if (job.scope) shiftScope(job.scope, src, find, replace, all);
+      job.log.push({ t: "edit", s: describeEdit(session.doc, elementAt(session.doc, at)) });
       session.broadcastJob();
     }
     const line = next.slice(0, at).split("\n").length;
     return `Saved (line ${line}${count > 1 ? `, ${count} places` : ""}); the user sees it now.${r.reload ? " Element ids changed; call outline before using ids again." : ""}`;
   }
   throw new Error(`unknown tool ${name}`);
+}
+
+// A request about one selected element may only change that element's
+// source, or the chart code that draws it.
+function scopeOf(doc, id) {
+  const n = id != null && doc.nodes[id];
+  if (!n) return null;
+  const [start, end] = doc.outerRange(n);
+  return { start, end };
+}
+
+function inScope(doc, scope, a, b) {
+  if (a >= scope.start && b <= scope.end) return true;
+  const id = elementAt(doc, a);
+  if (id == null || doc.nodes[id].tagName !== "script" || elementAt(doc, b - 1) !== id) return false;
+  const t = flashTarget(doc, a);
+  if (t == null) return false;
+  const s = doc.nodes[t].sourceCodeLocation.startOffset;
+  return s >= scope.start && s < scope.end;
+}
+
+// Keep the scope on the same element after an edit moved text around it.
+function shiftScope(scope, src, find, replace, all) {
+  const d = replace.length - find.length;
+  for (let i = src.indexOf(find); i >= 0; i = all ? src.indexOf(find, i + find.length) : -1) {
+    if (i < scope.start) scope.start += d;
+    if (i < scope.end) scope.end += d;
+  }
 }
 
 const KIND = { title: "page title", p: "paragraph", li: "list item", td: "table cell", th: "table header", script: "chart/script code", style: "styles", a: "link", img: "image", span: "text", div: "block", section: "section", table: "table", ul: "list", ol: "list", figure: "figure", figcaption: "caption", blockquote: "quote", pre: "code block", code: "code", button: "button", header: "header", footer: "footer" };
@@ -259,33 +299,46 @@ function findOnPath(cmd) {
   return null;
 }
 
-const claudeBin = () => {
-  const f = process.env.HOTEDIT_CLAUDE_BIN;
+const binFor = (name, env) => () => {
+  const f = process.env[env];
   if (f) return fs.existsSync(f) ? f : null;
-  return findOnPath("claude");
+  return findOnPath(name);
 };
+const claudeBin = binFor("claude", "HOTEDIT_CLAUDE_BIN");
+const codexBin = binFor("codex", "HOTEDIT_CODEX_BIN");
 
 // What the browser may know: never the key itself.
 function status() {
   const cfg = loadConfig();
   const claude = claudeBin();
+  const codex = codexBin();
   const key = process.env.ANTHROPIC_API_KEY
     ? "env"
     : cfg.apiKey
       ? "saved"
       : null;
-  const provider = cfg.provider || (claude ? "claude" : key ? "api" : null);
+  const provider =
+    cfg.provider || (claude ? "claude" : codex ? "codex" : key ? "api" : null);
   return {
     provider,
     model: cfg.model || "",
+    command: cfg.command || "",
     providers: [
       {
         id: "claude",
+        name: "Claude Code",
         available: !!claude,
-        detail: claude ? "Claude Code found" : "Claude Code not installed",
+        detail: claude ? "found" : "not installed",
+      },
+      {
+        id: "codex",
+        name: "Codex",
+        available: !!codex,
+        detail: codex ? "found" : "not installed",
       },
       {
         id: "api",
+        name: "API key",
         available: !!key,
         detail:
           key === "env"
@@ -293,6 +346,12 @@ function status() {
             : key
               ? `saved key …${cfg.apiKey.slice(-4)}`
               : "no key yet",
+      },
+      {
+        id: "command",
+        name: "Other agent",
+        available: !!cfg.command,
+        detail: cfg.command ? clip(cfg.command, 40) : "no command yet",
       },
     ],
   };
@@ -303,7 +362,7 @@ function status() {
 const SYSTEM = `You edit an HTML page that a person has open in hotedit, a live editor. Every edit you make is saved into the file and appears on their screen straight away, so work in small, precise edits.
 
 - Use outline to find things, read to get exact source, edit to change it.
-- If the person selected an element, the request is about that element unless they say otherwise.
+- If the person selected an element, change only that element (for a chart, its data or options in the <script>). Edits anywhere else are rejected.
 - Do exactly what was asked and nothing more. Keep the file's existing style, wording elsewhere, indentation and formatting; never reformat or rewrite unrelated parts.
 - Charts are drawn by <script> code (Plotly, Chart.js, Vega-Lite, Mermaid…): change their data or options there.
 - If the request is unclear or impossible, say so instead of guessing.
@@ -313,7 +372,7 @@ function taskText(session, { prompt, target: id }) {
   const name = path.basename(session.file);
   let t = `Page: ${name}\n\nRequest: ${prompt}\n`;
   if (id != null && session.doc.nodes[id])
-    t += `\nThe request is about this element (the one the person selected):\n${read(session.doc, id, { max: 20000 })}\n`;
+    t += `\nThe person selected this element; change only it:\n${read(session.doc, id, { max: 20000 })}\n`;
   else t += "\nThe request is about the whole page.\n";
   return t;
 }
@@ -324,6 +383,7 @@ class Job {
     this.id = Date.now().toString(36);
     this.prompt = req.prompt;
     this.target = req.id ?? null;
+    this.scope = scopeOf(session.doc, this.target);
     this.status = "running";
     this.log = [];
     this.undoStart = session.undo.length;
@@ -454,49 +514,141 @@ function toolLine(name, input = {}, doc = null) {
   return name;
 }
 
-// Claude Code with the user's own login; it reaches the page through
-// `hotedit mcp`, pinned to this session.
-function runClaude(job, cfg) {
-  const s = job.session;
-  const bin = claudeBin();
-  if (!bin)
-    throw new Error(
-      "Claude Code isn't installed. Get it at https://claude.com/code, run `claude` once to log in, then try again.",
-    );
-  const mcp = {
-    mcpServers: {
-      hotedit: {
-        command: process.execPath,
-        args: [path.join(__dirname, "..", "bin", "htmledit.js"), "mcp"],
-        env: { HOTEDIT_URL: s.url, HOTEDIT_TOKEN: s.token },
-      },
-    },
+// The page's tools for an agent CLI: `hotedit mcp`, pinned to this session.
+function mcpServer(s) {
+  return {
+    command: process.execPath,
+    args: [path.join(__dirname, "..", "bin", "htmledit.js"), "mcp"],
+    env: { HOTEDIT_URL: s.url, HOTEDIT_TOKEN: s.token },
   };
-  const allowed = TOOLS.map((t) => `mcp__hotedit__${t.name}`);
-  const args = [
-    "-p",
-    taskText(s, job),
-    "--output-format",
-    "stream-json",
-    "--verbose",
-    "--append-system-prompt",
-    SYSTEM,
-    "--mcp-config",
-    JSON.stringify(mcp),
-    "--strict-mcp-config",
-    "--tools",
-    "",
-    "--allowedTools",
-    allowed.join(","),
-    "--permission-mode",
-    "dontAsk",
-  ];
-  if (cfg.model) args.push("--model", cfg.model);
+}
+
+// Split a command line the way a shell would (quotes, no expansions).
+function words(cmd) {
+  const out = [];
+  const re = /"((?:\\.|[^"\\])*)"|'([^']*)'|(\S+)/g;
+  let m;
+  while ((m = re.exec(cmd)))
+    out.push(m[1] != null ? m[1].replace(/\\(.)/g, "$1") : m[2] != null ? m[2] : m[3]);
+  return out;
+}
+
+const plain = (t) => t.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "").trim();
+
+// Each agent CLI: how to start it, and how to read its output into the log.
+const CLIS = {
+  claude: {
+    bin: claudeBin,
+    missing:
+      "Claude Code isn't installed. Get it at https://claude.com/code, run `claude` once to log in, then try again.",
+    args(s, job, cfg) {
+      const allowed = TOOLS.map((t) => `mcp__hotedit__${t.name}`);
+      const args = [
+        "-p",
+        taskText(s, job),
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--append-system-prompt",
+        SYSTEM,
+        "--mcp-config",
+        JSON.stringify({ mcpServers: { hotedit: mcpServer(s) } }),
+        "--strict-mcp-config",
+        "--tools",
+        "",
+        "--allowedTools",
+        allowed.join(","),
+        "--permission-mode",
+        "dontAsk",
+      ];
+      if (cfg.model) args.push("--model", cfg.model);
+      return args;
+    },
+    // stream-json: assistant messages with text and tool_use blocks.
+    line(ev, job, s) {
+      if (ev.type === "assistant" && ev.message)
+        for (const b of ev.message.content || []) {
+          if (b.type === "text" && b.text.trim())
+            job.log.push({ t: "text", s: b.text.trim() });
+          if (b.type === "tool_use")
+            job.log.push({
+              t: "tool",
+              s: toolLine(b.name.replace(/^mcp__hotedit__/, ""), b.input, s.doc),
+            });
+        }
+      if (ev.type === "result")
+        return ev.is_error ? { error: ev.result || (ev.errors || []).join(" ") } : { ok: true };
+    },
+    login: "Claude Code isn't logged in: run `claude` in a terminal, type /login, then try again.",
+  },
+  codex: {
+    bin: codexBin,
+    missing:
+      "Codex isn't installed. Get it with `npm install -g @openai/codex`, run `codex` once to log in, then try again.",
+    args(s, job, cfg) {
+      const m = mcpServer(s);
+      const toml = (v) => JSON.stringify(v);
+      const args = [
+        "exec",
+        "--json",
+        "--skip-git-repo-check",
+        "--ephemeral",
+        "--sandbox",
+        "read-only",
+        "-C",
+        s.dir,
+        "-c",
+        `mcp_servers.hotedit.command=${toml(m.command)}`,
+        "-c",
+        `mcp_servers.hotedit.args=${toml(m.args)}`,
+        "-c",
+        `mcp_servers.hotedit.env={HOTEDIT_URL=${toml(m.env.HOTEDIT_URL)},HOTEDIT_TOKEN=${toml(m.env.HOTEDIT_TOKEN)}}`,
+      ];
+      if (cfg.model) args.push("-m", cfg.model);
+      args.push(`${SYSTEM}\n\nUse the hotedit tools (outline, read, edit) to change the page; don't edit files any other way.\n\n${taskText(s, job)}`);
+      return args;
+    },
+    // --json: item.* events (agent_message, mcp_tool_call), turn.*, error.
+    line(ev, job, s) {
+      const it = ev.item || {};
+      if (ev.type === "item.completed" && it.type === "agent_message" && (it.text || "").trim())
+        job.log.push({ t: "text", s: it.text.trim() });
+      if (ev.type === "item.started" && it.type === "mcp_tool_call")
+        job.log.push({ t: "tool", s: toolLine(it.tool, it.arguments, s.doc) });
+      if (ev.type === "turn.completed") return { ok: true };
+      if (ev.type === "turn.failed") return { error: (ev.error && ev.error.message) || "Codex stopped" };
+      if (ev.type === "error") return { error: ev.message || "Codex error" };
+    },
+    login: "Codex isn't logged in: run `codex` in a terminal and sign in, then try again.",
+  },
+  // Any other agent CLI that has hotedit's MCP server (e.g. `gemini mcp add
+  // hotedit npx -y hotedit mcp`). The request is its last argument, or goes
+  // where {prompt} is; HOTEDIT_URL pins its hotedit tools to this page.
+  command: {
+    bin() {
+      const w = words(loadConfig().command || "")[0];
+      return w && (path.isAbsolute(w) ? w : findOnPath(w) || w);
+    },
+    missing: "Set the command for your agent first (✨ → ⚙).",
+    args(s, job, cfg) {
+      const prompt = `${SYSTEM}\n\nUse the hotedit MCP tools (outline, read, edit) to change the page ${s.file}; don't edit files any other way.\n\n${taskText(s, job)}`;
+      const w = words(cfg.command).slice(1);
+      return w.includes("{prompt}") ? w.map((x) => (x === "{prompt}" ? prompt : x)) : [...w, prompt];
+    },
+    text: true,
+  },
+};
+
+function runCli(job, cfg, kind) {
+  const s = job.session;
+  const cli = CLIS[kind];
+  const bin = cli.bin();
+  if (!bin) throw new Error(cli.missing);
   return new Promise((resolve, reject) => {
-    const p = spawn(bin, args, {
+    const p = spawn(bin, cli.args(s, job, cfg), {
       cwd: s.dir,
       stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env },
+      env: { ...process.env, ...mcpServer(s).env, HOTEDIT_FILE: s.file },
     });
     job.abort = () => p.kill();
     let buf = "",
@@ -508,40 +660,34 @@ function runClaude(job, cfg) {
       while ((i = buf.indexOf("\n")) >= 0) {
         const line = buf.slice(0, i);
         buf = buf.slice(i + 1);
-        let ev;
-        try {
-          ev = JSON.parse(line);
-        } catch {
-          continue;
-        }
-        if (ev.type === "assistant" && ev.message) {
-          for (const b of ev.message.content || []) {
-            if (b.type === "text" && b.text.trim())
-              job.log.push({ t: "text", s: b.text.trim() });
-            if (b.type === "tool_use")
-              job.log.push({
-                t: "tool",
-                s: toolLine(b.name.replace(/^mcp__hotedit__/, ""), b.input, s.doc),
-              });
+        if (cli.text) {
+          if (plain(line)) job.log.push({ t: "text", s: plain(line) });
+        } else {
+          let ev;
+          try {
+            ev = JSON.parse(line);
+          } catch {
+            continue;
           }
-          s.broadcastJob();
+          result = cli.line(ev, job, s) || result;
         }
-        if (ev.type === "result") result = ev;
+        s.broadcastJob();
       }
     });
     p.stderr.on("data", (d) => (err += d));
-    p.on("error", reject);
+    p.on("error", (e) => reject(e.code === "ENOENT" ? new Error(cli.missing) : e));
     p.on("close", (code) => {
+      if (cli.text && plain(buf)) job.log.push({ t: "text", s: plain(buf) });
       if (job.stopped) return resolve();
-      if (result && !result.is_error) return resolve();
+      if (cli.text ? code === 0 : result && result.ok) return resolve();
       const why =
-        (result && (result.result || (result.errors || []).join(" "))) ||
-        err.trim() ||
-        `Claude Code exited with code ${code}`;
+        (result && result.error) ||
+        plain(err).split("\n").slice(-6).join(" ") ||
+        `${path.basename(bin)} exited with code ${code}`;
       reject(
         new Error(
-          /log ?in|auth|credential/i.test(why)
-            ? `Claude Code isn't logged in: run \`claude\` in a terminal, type /login, then try again. (${clip(why, 160)})`
+          cli.login && /log ?in|auth|credential|sign in/i.test(why)
+            ? `${cli.login} (${clip(why, 160)})`
             : clip(why, 400),
         ),
       );
@@ -564,7 +710,7 @@ async function start(session, req) {
   if (req.client) job.client = req.client; // tests
   session.job = job;
   session.broadcastJob();
-  const run = provider === "api" ? runApi(job, cfg) : runClaude(job, cfg);
+  const run = CLIS[provider] ? runCli(job, cfg, provider) : runApi(job, cfg);
   job.done = run
     .then(
       () => {
@@ -602,4 +748,6 @@ module.exports = {
   validate,
   SYSTEM,
   taskText,
+  words,
+  scopeOf,
 };

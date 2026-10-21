@@ -13,8 +13,6 @@ const path = require("path");
 const { execFile } = require("child_process");
 const { start } = require("../src/server");
 const { startLauncher } = require("../src/launcher");
-const { Doc } = require("../src/doc");
-const comments = require("../src/comments");
 const pkg = require("../package.json");
 
 const USAGE = `hotedit ${pkg.version} — edit any HTML file in your browser; changes are saved into the file
@@ -23,13 +21,6 @@ const USAGE = `hotedit ${pkg.version} — edit any HTML file in your browser; ch
   hotedit                      list the HTML files in this folder; click one to edit
   hotedit some/folder          the same, for another folder
   hotedit demo                 try it on a sample report (a throwaway copy; or --demo)
-
-  hotedit comments report.html [--json] [--all]
-                                notes left in the page (markdown for your AI agent)
-  hotedit comments report.html --wait [--timeout SECONDS]
-                                wait until a note arrives, then print it
-  hotedit comments report.html --resolve <id> [--note TEXT]
-  hotedit comments report.html --clear-resolved
 
   hotedit skill install [--project]
                                 install the agent skill for Claude Code
@@ -47,7 +38,7 @@ function parse(args) {
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (!a.startsWith("--") && !(a === "-h" || a === "-v")) opt._.push(a);
-    else if (["--port", "--timeout", "--resolve", "--note"].includes(a)) opt[a.slice(2)] = args[++i];
+    else if (["--port"].includes(a)) opt[a.slice(2)] = args[++i];
     else opt[a.replace(/^-+/, "")] = true;
   }
   return opt;
@@ -58,48 +49,9 @@ function fail(msg) {
   process.exit(1);
 }
 
-function needFile(file) {
-  if (!file) fail("which file? e.g. hotedit comments report.html");
-  if (!fs.existsSync(file)) fail(`no such file: ${file}`);
-  return path.resolve(file);
-}
-
 function openBrowser(url) {
   const cmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "explorer" : "xdg-open";
   execFile(cmd, [url], () => {});
-}
-
-async function cmdComments(opt) {
-  const file = needFile(opt._[1]);
-  if (opt.resolve) {
-    const c = comments.update(file, opt.resolve, {
-      status: "resolved",
-      ...(opt.note ? { note: opt.note } : {}),
-    });
-    console.log(`resolved [${c.id}] ${c.text}`);
-    return;
-  }
-  if (opt["clear-resolved"]) {
-    const keep = comments.load(file).filter((c) => c.status !== "resolved");
-    comments.save(file, keep);
-    console.log(`${keep.length} comment(s) left`);
-    return;
-  }
-  if (opt.wait) {
-    const deadline = Date.now() + Number(opt.timeout || 3600) * 1000;
-    while (!comments.load(file).some((c) => c.status === "open")) {
-      if (Date.now() > deadline) {
-        console.log("No open comments (timed out).");
-        process.exit(2);
-      }
-      await new Promise((r) => setTimeout(r, 500));
-    }
-  }
-  const doc = new Doc(fs.readFileSync(file, "utf8"));
-  if (opt.json) {
-    const list = comments.resolved(file, doc).filter((c) => opt.all || c.status === "open");
-    process.stdout.write(JSON.stringify({ file, comments: list }, null, 2) + "\n");
-  } else process.stdout.write(comments.markdown(file, doc, { all: !!opt.all }));
 }
 
 function cmdSkill(opt) {
@@ -112,7 +64,7 @@ function cmdSkill(opt) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "SKILL.md"), text);
   console.log(`Installed the hotedit skill: ${path.join(dir, "SKILL.md")}`);
-  console.log("Claude Code will now write edit-friendly HTML reports and pick up your 💬 notes.");
+  console.log("Claude Code will now write HTML reports that are easy to edit by hand.");
 }
 
 async function cmdDemo(opt) {
@@ -142,7 +94,6 @@ async function cmdOpen(opt) {
   console.log(`hotedit: editing ${session.file}`);
   console.log(`  open     ${url}`);
   console.log(`  backup   ${session.backupFile}`);
-  console.log(`  notes    hotedit comments ${path.basename(target)}`);
   console.log("  Ctrl+C to stop");
   if (!opt["no-open"]) openBrowser(url);
 }
@@ -161,7 +112,6 @@ async function main(argv) {
   const opt = parse(argv.slice(2));
   if (opt.help || opt.h) return process.stdout.write(USAGE);
   if (opt.version || opt.v) return console.log(pkg.version);
-  if (opt._[0] === "comments") return cmdComments(opt);
   if (opt._[0] === "skill") return cmdSkill(opt);
   if (opt._[0] === "mcp") return cmdMcp();
   // `hotedit demo` (unless ./demo is a folder you meant to open) or --demo.

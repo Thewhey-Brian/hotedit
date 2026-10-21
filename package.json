@@ -1,6 +1,6 @@
 {
   "name": "hotedit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Edit any HTML file in your browser — text, styles, layout, charts — and save the changes back into the file as small, clean patches. Built for AI-generated reports.",
   "keywords": [
     "html",
@@ -49,7 +49,7 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "test:unit": "node --test test/doc.test.js test/charts.test.js test/chartform.test.js test/comments.test.js"
+    "test:unit": "node --test test/doc.test.js test/charts.test.js test/chartform.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.137.0",

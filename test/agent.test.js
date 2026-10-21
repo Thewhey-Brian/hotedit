@@ -29,6 +29,8 @@ const tmpPage = (html = PAGE) => {
   return f;
 };
 const FAKE = path.join(__dirname, "fixtures", "fake-claude.js");
+const FAKE_CODEX = path.join(__dirname, "fixtures", "fake-codex.js");
+const FAKE_AGENT = path.join(__dirname, "fixtures", "fake-agent.js");
 
 test("outline, read and edit tools", async () => {
   const file = tmpPage();
@@ -153,6 +155,80 @@ test("Claude Code runner drives the page through hotedit mcp", async () => {
   }
 });
 
+test("Codex runner drives the page through hotedit mcp", async () => {
+  const file = tmpPage();
+  const s = await start(file);
+  Object.assign(process.env, { HOTEDIT_CODEX_BIN: FAKE_CODEX, FAKE_FIND: "<b>12%</b>", FAKE_REPLACE: "<b>16%</b>" });
+  try {
+    await agent.start(s.session, { prompt: "fix the number", provider: "codex" });
+    await s.session.job.done;
+    const j = s.session.job.snapshot();
+    assert.strictEqual(j.status, "done", JSON.stringify(j.log));
+    assert.ok(fs.readFileSync(file, "utf8").includes("<b>16%</b>"));
+    assert.deepStrictEqual(j.log.map((e) => e.t), ["tool", "edit", "text"]);
+  } finally {
+    delete process.env.HOTEDIT_CODEX_BIN;
+    await s.stop();
+  }
+});
+
+test("any other agent command reaches the page via HOTEDIT_URL", async () => {
+  const file = tmpPage();
+  const s = await start(file);
+  const before = { ...agent.loadConfig() };
+  Object.assign(process.env, { FAKE_FIND: "<b>12%</b>", FAKE_REPLACE: "<b>17%</b>" });
+  try {
+    agent.saveConfig({ command: `"${process.execPath}" ${FAKE_AGENT} --yes` });
+    assert.strictEqual(agent.status().providers.find((p) => p.id === "command").available, true);
+    await agent.start(s.session, { prompt: "fix the number", provider: "command" });
+    await s.session.job.done;
+    const j = s.session.job.snapshot();
+    assert.strictEqual(j.status, "done", JSON.stringify(j.log));
+    assert.ok(fs.readFileSync(file, "utf8").includes("<b>17%</b>"));
+    assert.deepStrictEqual(j.log.map((e) => e.s.slice(0, 7)), ["working", "Changed", "Saved ("]);
+  } finally {
+    fs.writeFileSync(path.join(process.env.HTMLEDIT_STATE_DIR, "config.json"), JSON.stringify(before));
+    await s.stop();
+  }
+});
+
+test("a request about a selected element can't edit anything else", async () => {
+  const html = `<!doctype html><html><body>
+<h1>Sales report</h1>
+<p id="p1">Revenue grew 5%.</p>
+<div id="chart"></div>
+<p>Revenue grew 5% again.</p>
+<script>Plotly.newPlot("chart", [{x: [1, 2], y: [3, 4], type: "bar"}], {title: "Sales"});</script>
+</body></html>
+`;
+  const file = tmpPage(html);
+  const s = await start(file);
+  try {
+    const d = s.session.doc;
+    const id = (sel) => d.nodes.find((n) => n.attrs.some((a) => a.name === "id" && a.value === sel)).heId;
+    // Scope a running job to the first paragraph.
+    s.session.job = { status: "running", log: [], scope: agent.scopeOf(d, id("p1")) };
+    s.session.broadcastJob = () => {};
+    assert.throws(() => agent.runTool(s.session, "edit", { find: "Sales report", replace: "x" }), /outside the element/);
+    assert.throws(() => agent.runTool(s.session, "edit", { find: "grew 5%", replace: "rose 6%", all: true }), /outside the element/);
+    agent.runTool(s.session, "edit", { find: "grew 5%.", replace: "grew a lot, 5%." });
+    // The scope follows the paragraph after its text got longer.
+    agent.runTool(s.session, "edit", { find: 'id="p1">Revenue', replace: 'id="p1">Sales' });
+    assert.throws(() => agent.runTool(s.session, "edit", { find: "5% again", replace: "x" }), /outside/);
+    // A chart's own code counts as the chart.
+    s.session.job.scope = agent.scopeOf(s.session.doc, id("chart"));
+    agent.runTool(s.session, "edit", { find: "y: [3, 4]", replace: "y: [3, 9]" });
+    assert.throws(() => agent.runTool(s.session, "edit", { find: "Revenue grew 5% again", replace: "x" }), /outside/);
+    assert.strictEqual(
+      fs.readFileSync(file, "utf8"),
+      html.replace("grew 5%.", "grew a lot, 5%.").replace('id="p1">Revenue', 'id="p1">Sales').replace("y: [3, 4]", "y: [3, 9]"),
+    );
+  } finally {
+    s.session.job = null;
+    await s.stop();
+  }
+});
+
 test("settings: key stays on disk (0600) and is never sent back", () => {
   const before = { ...agent.loadConfig() };
   try {
@@ -167,7 +243,7 @@ test("settings: key stays on disk (0600) and is never sent back", () => {
   }
 });
 
-test("MCP: an outside agent finds the open page, edits it, reads notes", async () => {
+test("MCP: an outside agent finds the open page and edits it", async () => {
   const file = tmpPage();
   const s = await start(file);
   try {
@@ -176,12 +252,11 @@ test("MCP: an outside agent finds the open page, edits it, reads notes", async (
     const init = await mcp.handle({ id: 1, method: "initialize", params: {} });
     assert.strictEqual(init.serverInfo.name, "hotedit");
     const names = (await mcp.handle({ id: 2, method: "tools/list" })).tools.map((t) => t.name);
-    assert.deepStrictEqual(names, ["open", "outline", "read", "edit", "notes", "resolve_note"]);
+    assert.deepStrictEqual(names, ["open", "outline", "read", "edit"]);
     const call = (name, args) => mcp.handle({ id: 3, method: "tools/call", params: { name, arguments: args } });
     const r = await call("edit", { file, find: "Revenue grew <b>", replace: "Revenue rose <b>" });
     assert.ok(!r.isError, r.content[0].text);
     assert.ok(fs.readFileSync(file, "utf8").includes("Revenue rose <b>"));
-    assert.match((await call("notes", {})).content[0].text, /comments on r\.html/i);
     const other = await call("edit", { file: "/nope.html", find: "a", replace: "b" });
     assert.ok(other.isError && /isn't open/.test(other.content[0].text));
     // `open` starts a session for a page that isn't open yet.

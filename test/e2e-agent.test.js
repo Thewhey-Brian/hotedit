@@ -20,17 +20,19 @@ test("✨ panel: connect, ask about the selected block, live edit, undo", async 
     await page.keyboard.press("Escape");
     await ui(page, '[data-act="ai"]').click();
     await page.waitForFunction(() => document.querySelector("htmledit-overlay").shadowRoot.querySelector(".agentp").style.display === "block");
-    assert.match(await ui(page, ".agentp .about").textContent(), /Title.*Old title/);
+    assert.match(await ui(page, ".agentp .about").textContent(), /Only changes: Title.*Old title/);
     // Connect: pick the Claude login.
     await ui(page, ".agentp .gear").click();
     await page.waitForFunction(() => /found/.test(document.querySelector("htmledit-overlay").shadowRoot.querySelector('.agentp .d[data-d="claude"]').textContent));
     await ui(page, '.agentp input[value="claude"]').check();
     await ui(page, ".agentp .savec").click();
-    await page.waitForFunction(() => /Claude login/.test(document.querySelector("htmledit-overlay").shadowRoot.querySelector(".agentp .gear").textContent));
+    await page.waitForFunction(() => /Claude Code/.test(document.querySelector("htmledit-overlay").shadowRoot.querySelector(".agentp .gear").textContent));
     await ui(page, ".agentp textarea").fill("Rename the heading");
-    await Promise.all([page.waitForEvent("load"), ui(page, ".agentp textarea").press("Meta+Enter")]);
-    // The page reloaded with the edit; the panel came back with the log.
-    await page.waitForFunction(() => window.__htmledit && document.querySelector("h1").textContent === "New title");
+    await page.evaluate(() => (window.__noReload = true));
+    await ui(page, ".agentp textarea").press("Meta+Enter");
+    // The edit shows up in place: no reload, no blink.
+    await page.waitForFunction(() => document.querySelector("h1").textContent === "New title");
+    assert.ok(await page.evaluate(() => window.__noReload), "page did not reload");
     assert.ok(s.read().includes("<h1>New title</h1>"));
     await page.waitForFunction(() => document.querySelector("htmledit-overlay").shadowRoot.querySelector(".flash").style.display === "block", null, { timeout: 3000 });
     await page.waitForFunction(() => /✓ Changed heading/.test(document.querySelector("htmledit-overlay").shadowRoot.querySelector(".agentp .log").textContent));
@@ -45,8 +47,9 @@ test("✨ panel: connect, ask about the selected block, live edit, undo", async 
   }
 });
 
-test("✨ without a connected AI still offers 'Leave as note', and Do it asks to connect", async () => {
+test("✨ without a connected AI: Do it asks to connect", async () => {
   process.env.HOTEDIT_CLAUDE_BIN = "/nonexistent/claude";
+  process.env.HOTEDIT_CODEX_BIN = "/nonexistent/codex";
   const s = await open({ name: "b.html", html: "<!doctype html><body><p>Hello</p></body>" });
   const { page } = s;
   try {
@@ -57,11 +60,91 @@ test("✨ without a connected AI still offers 'Leave as note', and Do it asks to
     await page.keyboard.press("Escape");
     await ui(page, '[data-act="ai"]').click();
     await ui(page, ".agentp textarea").fill("Say hi");
-    assert.ok(await ui(page, ".agentp .tonote").isVisible());
+    assert.strictEqual(await ui(page, ".agentp .tonote").count(), 0, "no note mode");
     await ui(page, ".agentp .go").click();
     await ui(page, ".agentp .conn").waitFor({ state: "visible" });
   } finally {
     delete process.env.HOTEDIT_CLAUDE_BIN;
+    delete process.env.HOTEDIT_CODEX_BIN;
+    await s.close();
+  }
+});
+
+test("AI edits land in place: text, new items, styles, head CSS and chart data", async () => {
+  const html = `<!doctype html><html><head><style>h1 { color: rgb(0, 0, 0); }</style>
+<script src="lib/plotly.min.js"></script></head><body>
+<h1>Report</h1>
+<ul id="list"><li>one</li><li>two</li></ul>
+<p id="after">After the list</p>
+<div id="chart" style="width:400px;height:300px"></div>
+<script>Plotly.newPlot("chart", [{x: ["a", "b"], y: [1, 2], type: "bar"}], {title: {text: "Sales"}});</script>
+</body></html>
+`;
+  const s = await open({ name: "live.html", html });
+  const { page } = s;
+  const edit = (find, replace) => page.evaluate((input) => window.__htmledit.api("POST", "/agent/tool", { name: "edit", input }), { find, replace });
+  try {
+    await page.waitForFunction(() => document.getElementById("chart").data);
+    await page.evaluate(() => (window.__noReload = true));
+    const v0 = await page.evaluate(() => window.__htmledit.version);
+    await edit("<h1>Report</h1>", "<h1>Quarterly report</h1>");
+    await page.waitForFunction(() => document.querySelector("h1").textContent === "Quarterly report");
+    await edit("<li>two</li>", "<li>two</li><li>three</li>");
+    await page.waitForFunction(() => document.querySelectorAll("#list li").length === 3);
+    await edit("h1 { color: rgb(0, 0, 0); }", "h1 { color: rgb(200, 0, 0); }");
+    await page.waitForFunction(() => getComputedStyle(document.querySelector("h1")).color === "rgb(200, 0, 0)");
+    await edit('id="after"', 'id="after" style="color: rgb(0, 128, 0)"');
+    await page.waitForFunction(() => getComputedStyle(document.getElementById("after")).color === "rgb(0, 128, 0)");
+    await edit("y: [1, 2]", "y: [5, 9]");
+    await page.waitForFunction(() => JSON.stringify(document.getElementById("chart").data[0].y) === "[5,9]");
+    assert.ok(await page.evaluate(() => window.__noReload), "no reloads");
+    // Ids moved with the new <li>: editing by hand still lands in the right place.
+    assert.ok((await page.evaluate(() => window.__htmledit.version)) > v0);
+    await page.keyboard.press("e");
+    await page.locator("#after").click();
+    await page.keyboard.press("End");
+    await page.keyboard.type("!");
+    await page.keyboard.press("Enter");
+    assert.ok(await until(() => s.read().includes('style="color: rgb(0, 128, 0)">After the list!</p>')), s.read());
+    assert.ok(s.read().includes("<li>two</li><li>three</li>"));
+    assert.deepStrictEqual(s.errors, []);
+  } finally {
+    await s.close();
+  }
+});
+
+test("hovering a button shows what it does and its shortcut", async () => {
+  const s = await open({ name: "t.html", html: "<!doctype html><body><p>Hello</p></body>" });
+  const { page } = s;
+  try {
+    await ui(page, ".bar .undo").hover();
+    await ui(page, ".tip").waitFor({ state: "visible" });
+    assert.match(await ui(page, ".tip").textContent(), /Undo the last change\s*(⌘|Ctrl\+)Z/);
+    await page.keyboard.press("e");
+    await page.locator("body > p").click();
+    await page.keyboard.press("Escape");
+    await ui(page, '.bb [data-act="style"]').hover();
+    await page.waitForFunction(() => /Style.*S$/.test(document.querySelector("htmledit-overlay").shadowRoot.querySelector(".tip").textContent));
+    await ui(page, '.bb [data-act="more"]').click();
+    assert.match(await ui(page, '.menu [data-act="duplicate"]').textContent(), /Duplicate(⌘|Ctrl\+)D/);
+  } finally {
+    await s.close();
+  }
+});
+
+test("Done saves the open panel and stops editing", async () => {
+  const s = await open({ name: "d.html", html: "<!doctype html><body>\n<p>Hello</p>\n</body>" });
+  const { page } = s;
+  try {
+    await page.keyboard.press("e");
+    await page.locator("body > p").click();
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("s");
+    await ui(page, '.sty [data-p="font-weight"]').selectOption("700");
+    await ui(page, ".bar .edit").click();
+    assert.ok(await until(() => s.read().includes('<p style="font-weight: 700">Hello</p>')), s.read());
+    await page.waitForFunction(() => document.querySelector("htmledit-overlay").shadowRoot.querySelector(".bar .edit").textContent === "✎ Edit");
+  } finally {
     await s.close();
   }
 });

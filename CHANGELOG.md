@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.4.0 — 2026-10-21
+
+- ✨ works with more AIs: **Codex** (your ChatGPT login) next to Claude Code
+  and an Anthropic API key, plus **Other agent**: any agent CLI that has
+  hotedit's MCP tools (Gemini CLI, OpenCode, Cursor…), run with a command you
+  type.
+- Point the AI at one block: click a block and the request changes only that
+  block (a chart's own code counts as the chart). Edits anywhere else are
+  rejected, whatever the AI tries.
+- No more blinking: AI edits (and edits from other tabs or agents) now show
+  up in place, without reloading the page. Charts redraw, styles and new
+  list items appear, and the page keeps its scroll and state.
+- Hover any button to see what it does and its shortcut. New shortcuts: A
+  (✨ AI), S (style), I (add), P (select the block around), ⌘D duplicate,
+  ⌫ delete.
+- Done is always in the same place (top right) and saves whatever is open,
+  text or a panel; every panel's main button is now Done. The block toolbar
+  never covers it.
+- Removed notes (💬, *Leave as note*, `hotedit comments`, the `notes` /
+  `resolve_note` MCP tools): ask the AI directly instead.
+
 ## 0.3.0 — 2026-10-21
 
 - ✨ **Ask AI, live**: select a block (or the whole page), say what should

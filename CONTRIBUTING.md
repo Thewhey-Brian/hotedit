@@ -11,7 +11,7 @@ npx playwright install chromium
 npm test
 ```
 
-`npm test` runs unit tests (`doc`, `charts`, `chartform`, `comments`), CLI tests, and
+`npm test` runs unit tests (`doc`, `charts`, `chartform`, `livepatch`), CLI tests, and
 real-browser end-to-end tests that drive the editor in Chromium and check the bytes
 written to disk. `npm run test:unit` runs only the fast ones.
 
@@ -39,8 +39,9 @@ HTMLEDIT_SAMPLES=/path/to/your/reports node --test test/doc.test.js test/e2e-m6.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short, `src/doc.js` does source
 mapping and patches, `src/server.js` is the local server, `src/overlay.js` is the in-page
-editor, `src/charts.js` and `src/chartform.js` handle charts, `src/comments.js` handles
-notes, and `src/launcher.js` is the file picker.
+editor, `src/charts.js` and `src/chartform.js` handle charts, `src/agent.js` and `src/mcp.js`
+are the AI agent and MCP server, `src/livepatch.js` makes live updates, and
+`src/launcher.js` is the file picker.
 
 The only runtime dependencies are `parse5` and `entities`, and they should stay that
 small. `hotedit` must keep working via `npx` with no build step.

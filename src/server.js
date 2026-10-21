@@ -8,8 +8,8 @@ const http = require("http");
 const crypto = require("crypto");
 const { Doc, applyPatches } = require("./doc");
 const charts = require("./charts");
-const comments = require("./comments");
 const agent = require("./agent");
+const { livePatch } = require("./livepatch");
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -68,6 +68,8 @@ class Session {
     const before = this.src;
     if (next === before) return { changed: false };
     const tags = this.tagList();
+    const prev = this.doc;
+    const base = this.version;
     fs.writeFileSync(this.file, next);
     this.lastWritten = next;
     this.undo.push({ before, after: next, label });
@@ -76,7 +78,7 @@ class Session {
     // Element ids shift when the element structure changes; overlay must reload.
     const reload = structural || this.tagList() !== tags;
     if (reload) this.version++;
-    this.notifyOthers(flashAt == null ? null : agent.flashTarget(this.doc, flashAt));
+    this.notifyOthers(flashAt == null ? null : agent.flashTarget(this.doc, flashAt), this.patchFrom(prev, base));
     return { changed: true, reload };
   }
 
@@ -88,17 +90,28 @@ class Session {
       return;
     }
     if (cur === this.src) return;
+    const prev = this.doc;
+    const base = this.version;
     this.src = cur;
     this.doc = new Doc(cur);
     this.undo = [];
     this.redo = [];
     this.version++;
-    this.broadcast({ type: "reload", reason: "file changed on disk" });
+    this.broadcast({ type: "reload", reason: "file changed on disk", ...this.patchFrom(prev, base) });
   }
 
-  // Other tabs on this file must reload, or they'd overwrite this change.
-  notifyOthers(flash = null) {
-    this.broadcast({ type: "reload", reason: "edited in another tab", except: this.writer, flash });
+  // How open pages can show the change in place instead of reloading.
+  patchFrom(prev, base) {
+    let patch = null;
+    try {
+      patch = livePatch(prev, this.doc);
+    } catch {}
+    return patch ? { patch, base, version: this.version } : {};
+  }
+
+  // Other tabs on this file must update, or they'd overwrite this change.
+  notifyOthers(flash = null, live = {}) {
+    this.broadcast({ type: "reload", reason: "edited in another tab", except: this.writer, flash, ...live });
   }
 
   broadcastJob() {
@@ -278,29 +291,13 @@ function createServer(session) {
       const patches = charts.patchChart(session.doc, body.index, body.values);
       return session.write(applyPatches(session.src, patches), "chart");
     },
-    "GET /comments": () => comments.resolved(session.file, session.doc),
-    "POST /comments": (q, b) => {
-      if (b.action === "add") {
-        if (b.version !== session.version) return { stale: true };
-        return comments.add(session.file, session.doc, b);
-      }
-      if (b.action === "resolve" || b.action === "reopen") {
-        return comments.update(session.file, b.cid, { status: b.action === "resolve" ? "resolved" : "open", ...(b.note ? { note: String(b.note) } : {}) });
-      }
-      if (b.action === "edit") return comments.update(session.file, b.cid, { text: b.text });
-      if (b.action === "delete") {
-        comments.remove(session.file, b.cid);
-        return { ok: true };
-      }
-      throw new Error(`unknown action ${b.action}`);
-    },
-    "GET /comments.md": () => ({ markdown: comments.markdown(session.file, session.doc) }),
     "GET /agent": () => ({ ...agent.status(), job: session.job ? session.job.snapshot() : null }),
     "POST /agent/config": (q, b) => {
       const patch = {};
       if (b.provider !== undefined) patch.provider = b.provider;
       if (b.model !== undefined) patch.model = String(b.model).trim();
       if (b.apiKey !== undefined) patch.apiKey = String(b.apiKey).trim();
+      if (b.command !== undefined) patch.command = String(b.command).trim();
       agent.saveConfig(patch);
       return agent.status();
     },
@@ -318,7 +315,6 @@ function createServer(session) {
         return { text: e.message, isError: true };
       }
     },
-    "GET /agent/notes": () => ({ markdown: comments.markdown(session.file, session.doc) }),
     "POST /undo": () => session.history(session.undo, session.redo),
     "POST /redo": () => session.history(session.redo, session.undo),
     "GET /state": () => ({
@@ -398,19 +394,12 @@ async function start(file, { port = 0, host = "127.0.0.1" } = {}) {
       return "";
     }
   };
-  const side = comments.sidecar(session.file);
   let seen = stampOf(session.file);
-  let seenSide = stampOf(side);
   const timer = setInterval(() => {
     const now = stampOf(session.file);
     if (now !== seen) {
       seen = now;
       session.external();
-    }
-    const s2 = stampOf(side);
-    if (s2 !== seenSide) {
-      seenSide = s2;
-      session.broadcast({ type: "comments" });
     }
   }, 300);
   timer.unref();

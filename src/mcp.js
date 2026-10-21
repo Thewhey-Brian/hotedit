@@ -39,25 +39,6 @@ const EXTRA = [
       required: ["file"],
     },
   },
-  {
-    name: "notes",
-    description:
-      "The notes the person left on the page (💬) for you, with where each one is pinned. Resolve each with resolve_note once done.",
-    inputSchema: { type: "object", properties: { ...fileProp } },
-  },
-  {
-    name: "resolve_note",
-    description: "Mark a note as done.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        ...fileProp,
-        id: { type: "string" },
-        note: { type: "string", description: "optional reply" },
-      },
-      required: ["id"],
-    },
-  },
 ];
 
 function createMcp({ registry, start, openBrowser, pinned, version }) {
@@ -115,14 +96,6 @@ function createMcp({ registry, start, openBrowser, pinned, version }) {
       if (browser && openBrowser) openBrowser(s.url);
       return `Opened ${f} at ${s.url}${browser ? " (in the person's browser)" : ""}. Edits you make with edit show up there live.`;
     },
-    async notes({ file }) {
-      return (await call(pick(file), "/agent/notes")).markdown;
-    },
-    async resolve_note({ file, id, note }) {
-      const page = pick(file);
-      await call(page, "/comments", { action: "resolve", cid: id, ...(note ? { note } : {}) });
-      return `Resolved ${id}.`;
-    },
   };
   for (const t of TOOLS) {
     tools[t.name] = async ({ file, ...input }) => {
@@ -144,7 +117,7 @@ function createMcp({ registry, start, openBrowser, pinned, version }) {
           ),
         },
       }))
-    : [...EXTRA.slice(0, 1), ...TOOLS.map(withFile), ...EXTRA.slice(1)];
+    : [...EXTRA, ...TOOLS.map(withFile)];
 
   async function handle(msg) {
     const { id, method, params = {} } = msg;

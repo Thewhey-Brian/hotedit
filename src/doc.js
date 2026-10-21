@@ -79,9 +79,12 @@ class Doc {
   }
 
   // Served copy: data-he="id" in every source start tag, overlay before EOF.
-  instrument(inject) {
+  // With `[lo, hi)`, just that part of the file (for live updates).
+  instrument(inject, lo = 0, hi = this.src.length) {
     const ins = [];
     for (const n of this.nodes) {
+      const s = n.sourceCodeLocation.startOffset;
+      if (s < lo || s >= hi) continue;
       const st = n.sourceCodeLocation.startTag;
       let at = st.endOffset - 1; // before '>'
       if (this.src[at - 1] === "/" && /[\s"']/.test(this.src[at - 2] || ""))
@@ -90,12 +93,12 @@ class Doc {
       ins.push([at, ` data-he="${n.heId}"`]);
     }
     let out = "",
-      pos = 0;
+      pos = lo;
     for (const [at, s] of ins.sort((a, b) => a[0] - b[0])) {
       out += this.src.slice(pos, at) + s;
       pos = at;
     }
-    out += this.src.slice(pos);
+    out += this.src.slice(pos, hi);
     return out + inject;
   }
 

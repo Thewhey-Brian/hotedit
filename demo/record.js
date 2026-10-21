@@ -404,30 +404,27 @@ const esc = (s) =>
   await ready();
   await pause(1300);
 
-  // ── 8. Note for the AI agent ─────────────────────────────────────────
-  await cap(7, "Bigger change? ✨ asks Claude live, or leaves a note for later");
+  // ── 8. Ask AI about one block ────────────────────────────────────────
+  // The AI is played by a stand-in (test/fixtures/fake-claude.js) so the
+  // tour is repeatable; it edits through the same hotedit tools Claude uses.
+  Object.assign(process.env, {
+    HOTEDIT_CLAUDE_BIN: path.join(__dirname, "..", "test", "fixtures", "fake-claude.js"),
+    FAKE_FIND: "Two coastal regions are still under-dispersed: intervals are 8% too narrow there.",
+    FAKE_REPLACE: "Two coastal regions (Gulf, Pacific NW) need wider intervals: about 8% too narrow today.",
+    FAKE_DELAY: "900",
+  });
+  await page.evaluate(() => window.__htmledit.api("POST", "/agent/config", { provider: "claude" }));
+  await cap(7, "✨ Ask AI about one block: it changes only that, live, no reload");
   await selectBlock(page.locator(".callout.warn p"), { dx: 220 });
   await click(ui('.bb [data-act="ai"]'));
   await pause(700);
-  await click(ui(".agentp .tonote"));
-  await pause(500);
-  await type("Recompute the coastal intervals and update this warning", 38);
-  await click(ui(".cmtp .save"));
-  await pause(1300);
-  const notes = execFileSync(
-    "node",
-    [path.join(__dirname, "..", "bin", "htmledit.js"), "comments", file],
-    { encoding: "utf8" },
-  )
-    .split("\n")
-    .slice(0, 18)
-    .join("\n").split(file).join("aurora_report.html");
-  await card(
-    `<div class="panel"><p class="head">Your agent picks the note up from the command line</p><div class="term"><div class="bar"><i></i><i></i><i></i><span>agent</span></div><pre><span class="p">$ hotedit comments aurora_report.html</span>\n${esc(notes)}</pre></div></div>`,
-  );
-  await pause(5200);
-  await hide();
-  await pause(500);
+  await type("Name the two regions and make this clearer", 38);
+  await pause(300);
+  await click(ui(".agentp .go"));
+  await page.waitForFunction(() => /Gulf/.test(document.querySelector(".callout.warn p").textContent), null, { timeout: 20000 });
+  await pause(2600);
+  await click(ui(".agentp .x"));
+  await pause(600);
 
   // ── 9. The diff ──────────────────────────────────────────────────────
   await cap(0, "");
@@ -465,7 +462,7 @@ const esc = (s) =>
 
   // ── End ──────────────────────────────────────────────────────────────
   await card(
-    `<div class="title"><h1>hotedit</h1><p>Text · styles · layout · charts · maths · notes for your AI</p><code class="cmd">npx hotedit demo</code><p style="font-size:20px;margin-top:22px;color:#94a3b8">github.com/Thewhey-Brian/htmledit</p></div>`,
+    `<div class="title"><h1>hotedit</h1><p>Text · styles · layout · charts · maths · AI, live</p><code class="cmd">npx hotedit demo</code><p style="font-size:20px;margin-top:22px;color:#94a3b8">github.com/Thewhey-Brian/htmledit</p></div>`,
   );
   await pause(3800);
 

@@ -4,7 +4,7 @@
   "use strict";
   const me = document.currentScript;
   const TOKEN = me.dataset.heToken;
-  const VERSION = Number(me.dataset.heVersion);
+  let VERSION = Number(me.dataset.heVersion);
   const ORIGIN = new URL(me.src).origin; // not the page's <base href>
   const CLIENT = Math.random().toString(36).slice(2);
   me.remove();
@@ -32,6 +32,13 @@
     padding: 5px 6px; border-radius: 10px; background: rgba(24,24,27,.94); color: #fafafa;
     font: 13px/1.2 -apple-system, system-ui, sans-serif; box-shadow: 0 6px 24px rgba(0,0,0,.25); }
   .bar { top: 12px; right: 12px; }
+  .bar .edit { min-width: 64px; text-align: center; font-weight: 600; }
+  .tip { position: fixed; z-index: 2147483647; display: none; pointer-events: none; max-width: 260px;
+    padding: 5px 8px; border-radius: 7px; background: rgba(9,9,11,.96); color: #f4f4f5;
+    font: 12px/1.35 -apple-system, system-ui, sans-serif; box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+  kbd { display: inline-block; margin-left: 6px; padding: 1px 5px; border-radius: 4px; background: #3f3f46;
+    color: #e4e4e7; font: 11px/1.4 -apple-system, system-ui, sans-serif; }
+  .menu kbd { margin-left: auto; padding-left: 12px; background: transparent; color: #71717a; }
   .bb { display: none; padding: 3px 4px; border-radius: 8px; }
   button { all: unset; cursor: pointer; padding: 5px 9px; border-radius: 7px; background: #3f3f46;
     font: 13px/1.2 -apple-system, system-ui, sans-serif; color: #fafafa; }
@@ -61,7 +68,6 @@
   .grid label { color: #a1a1aa; font-size: 12px; }
   .pair { display: flex; gap: 6px; }
   h4 { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
-  .cmtp { right: 12px; top: 60px; width: 340px; }
   .ins { width: 312px; padding: 8px; }
   .ins .where { display: flex; gap: 4px; margin-bottom: 8px; }
   .ins .where button { flex: 1; text-align: center; padding: 4px 0; font-size: 12px; }
@@ -69,17 +75,6 @@
   .ins .items button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px; background: #27272a; font-size: 11px; }
   .ins .items button:hover { background: #3f3f46; }
   .ins .ic { font: 600 15px/1.1 -apple-system, system-ui, sans-serif; height: 18px; }
-  .cmtp textarea { height: 120px; font: 13px/1.4 -apple-system, system-ui, sans-serif; }
-  .cmts { left: 12px; top: 60px; width: 340px; max-height: calc(100vh - 80px); overflow: auto; }
-  .citem { border-top: 1px solid #27272a; padding: 8px 0; }
-  .citem.focus { background: #1e293b; }
-  .chead { font: 11px ui-monospace, monospace; color: #93c5fd; margin-bottom: 4px; }
-  .citem .row { justify-content: flex-start; margin-top: 6px; }
-  .citem .row button { padding: 3px 8px; font-size: 12px; }
-  .pin { position: fixed; z-index: 2147483645; width: 22px; height: 22px; padding: 0; border-radius: 50% 50% 50% 0;
-    background: #f59e0b; color: #111; font: 600 11px/22px -apple-system, sans-serif; text-align: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,.3); }
-  .pin:hover { background: #fbbf24; }
   .bb .grip { cursor: grab; font-size: 15px; padding: 3px 6px; color: #a1a1aa; }
   .bb .grip:hover { color: #fafafa; }
   .box.drag { border: 2px dashed #a1a1aa; background: rgba(161,161,170,.12); }
@@ -120,6 +115,7 @@
   .agentp { right: 12px; bottom: 12px; width: 360px; max-height: calc(100vh - 80px); overflow: auto; }
   .agentp textarea { height: 76px; font: 13px/1.4 -apple-system, system-ui, sans-serif; resize: vertical; }
   .agentp .scope { display: flex; gap: 6px; align-items: center; margin: 0 0 8px; color: #a1a1aa; font-size: 12px; }
+  .agentp .pick { margin: -4px 0 8px; font-size: 11.5px; }
   .agentp .scope .about { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .agentp .scope button { padding: 3px 8px; font-size: 12px; }
   .agentp .row { flex-wrap: wrap; }
@@ -245,13 +241,13 @@
 <div class="flash"></div>
 <div class="ghost"></div>
 <div class="bar">
-  <button class="edit" title="Turn editing on or off (E)">✎ Edit</button>
-  <button class="undo" title="Undo the last saved change (⌘Z)">↶</button>
-  <button class="redo" title="Redo (⇧⌘Z)">↷</button>
-  <button class="aibtn" title="Ask AI to change the page — it edits live">✨ AI</button>
-  <button class="cbtn" title="Notes for your AI agent">💬 0</button>
   <span class="status">hotedit</span>
+  <button class="undo" title="Undo the last change">↶</button>
+  <button class="redo" title="Redo">↷</button>
+  <button class="aibtn" title="Ask AI to change the page; it edits live">✨ AI</button>
+  <button class="edit" title="Edit this page">✎ Edit</button>
 </div>
+<div class="tip"></div>
 <div class="hint">
   <b>Edit this page</b>
   <ol><li>Press <kbd>E</kbd> or click <b>✎ Edit</b></li><li>Click any text and type</li><li>Click a block for its toolbar: <b>＋</b> add, <b>Aa</b> style, drag <b>⠿</b> to move</li></ol>
@@ -266,7 +262,7 @@
   <button data-act="image" title="Replace image">🖼</button>
   <button data-act="link" title="Change link">🔗</button>
   <button data-act="chart" title="Edit chart">📊</button>
-  <button data-act="ai" title="Ask AI to change this (or leave a note)">✨</button>
+  <button data-act="ai" title="Ask AI to change this">✨</button>
   <button data-act="more" title="More: move, duplicate, hide, delete, HTML">⋯</button>
 </div>
 <div class="menu more">
@@ -283,7 +279,7 @@
   <p class="msg"></p>
   <textarea spellcheck="false"></textarea>
   <input class="line" type="text">
-  <div class="row"><button class="cancel">Cancel</button><button class="primary save">Save</button></div>
+  <div class="row"><button class="cancel">Cancel</button><button class="primary save">Done</button></div>
 </div>
 <div class="panel chartp">
   <div class="cph"><span class="cpk"></span><div class="cpt"></div></div>
@@ -293,43 +289,38 @@
   <div class="tab form"></div>
   <div class="tab data"></div>
   <div class="tab code"><p class="msg spec-label">Full spec</p><textarea spellcheck="false"></textarea></div>
-  <div class="row foot"><span class="live">Live preview</span><button class="cancel">Cancel</button><button class="primary apply">Apply</button></div>
+  <div class="row foot"><span class="live">Live preview</span><button class="cancel">Cancel</button><button class="primary apply">Done</button></div>
 </div>
 <div class="panel ins">
   <h4>Add</h4>
   <div class="where"><button data-w="before">Above</button><button data-w="after">Below</button><button data-w="inside">Inside</button></div>
   <div class="items"></div>
 </div>
-<div class="panel cmtp">
-  <h4>Note for your AI agent</h4>
-  <p class="msg"></p>
-  <textarea spellcheck="true" placeholder="What should the agent change here?"></textarea>
-  <div class="row"><button class="cancel">Cancel</button><button class="primary save">Save note</button></div>
-</div>
-<div class="panel cmts">
-  <h4>Notes for your AI agent</h4>
-  <div class="list"></div>
-  <div class="row"><button class="close">Close</button><button class="primary copy">Copy for agent</button></div>
-</div>
 <div class="panel agentp">
   <button class="x" title="Close">✕</button>
   <h4>✨ Ask AI</h4>
   <div class="ask">
-    <div class="scope"><span class="about"></span><button class="whole" title="Ask about the whole page instead">Whole page</button></div>
+    <div class="scope"><span class="about"></span><button class="whole" title="Let the AI change the whole page">Whole page</button></div>
+    <p class="msg pick">Click any block to point the AI at just that block.</p>
     <textarea spellcheck="true" placeholder="What should change? e.g. “Make this shorter and friendlier”, “Turn the bars orange”, “Add a row for March”"></textarea>
-    <div class="row"><button class="gear" title="Choose how hotedit reaches Claude">⚙ Connect</button><button class="tonote" title="Save it as a note for later instead">Leave as note</button><button class="primary go" title="⌘Enter">Do it</button></div>
+    <div class="row"><button class="gear" title="Choose which AI edits the page">⚙ Connect</button><button class="primary go" title="Start">Do it</button></div>
   </div>
   <div class="log"></div>
   <div class="row after"><button class="undoai">↶ Undo AI changes</button><button class="stop">■ Stop</button></div>
   <div class="conn">
-    <p class="msg">How should hotedit reach Claude? The AI edits this page live and every change can be undone.</p>
-    <label class="opt"><input type="radio" name="he-prov" value="claude"><b>Claude login</b><span class="d" data-d="claude"></span>
-      <span class="msg">Uses your Claude plan through Claude Code. Install it from <code>claude.com/code</code>, run <code>claude</code> once and log in.</span></label>
+    <p class="msg">Pick the AI that edits this page. It changes the page live and every change can be undone.</p>
+    <label class="opt"><input type="radio" name="he-prov" value="claude"><b>Claude Code</b><span class="d" data-d="claude"></span>
+      <span class="msg">Your Claude plan. Install from <code>claude.com/code</code>, run <code>claude</code> once to log in.</span></label>
+    <label class="opt"><input type="radio" name="he-prov" value="codex"><b>Codex</b><span class="d" data-d="codex"></span>
+      <span class="msg">Your ChatGPT plan. <code>npm i -g @openai/codex</code>, run <code>codex</code> once to log in.</span></label>
     <label class="opt"><input type="radio" name="he-prov" value="api"><b>Anthropic API key</b><span class="d" data-d="api"></span>
-      <span class="msg">Pay per use. Saved only on this computer (<code>~/.htmledit/config.json</code>), or set <code>ANTHROPIC_API_KEY</code>.</span>
+      <span class="msg">Pay per use. Kept only on this computer, or set <code>ANTHROPIC_API_KEY</code>.</span>
       <input class="key" type="password" placeholder="sk-ant-…" autocomplete="off"></label>
-    <input class="model" type="text" placeholder="Model (optional; e.g. claude-opus-5-5)">
-    <div class="row"><button class="back">Back</button><button class="primary savec">Save</button></div>
+    <label class="opt"><input type="radio" name="he-prov" value="command"><b>Other agent</b><span class="d" data-d="command"></span>
+      <span class="msg">Any agent CLI with hotedit's tools (<code>npx hotedit mcp</code>), e.g. Gemini, OpenCode, Cursor. The request is added as its last argument (or put <code>{prompt}</code>).</span>
+      <input class="cmd" type="text" placeholder="gemini -y" spellcheck="false" autocomplete="off"></label>
+    <input class="model" type="text" placeholder="Model (optional)">
+    <div class="row"><button class="back">Back</button><button class="primary savec">Done</button></div>
   </div>
 </div>
 <div class="panel sty">
@@ -357,7 +348,7 @@
   </div></details>
   <datalist id="he-sizes"><option>12px</option><option>14px</option><option>16px</option><option>18px</option><option>20px</option><option>24px</option><option>28px</option><option>32px</option><option>40px</option><option>48px</option></datalist>
   <datalist id="he-fonts"><option>system-ui, sans-serif</option><option>Georgia, serif</option><option>ui-monospace, monospace</option><option>Inter, sans-serif</option></datalist>
-  <div class="row"><button class="reset">Clear all</button><button class="cancel">Cancel</button><button class="primary apply">Apply</button></div>
+  <div class="row"><button class="reset">Clear all</button><button class="cancel">Cancel</button><button class="primary apply">Done</button></div>
 </div>`;
   const $ = (s) => root.querySelector(s);
   const hov = $(".hov"),
@@ -530,10 +521,17 @@
     // Above the block when there is room; otherwise inside its top-right
     // corner, so the bar never covers neighbouring content.
     const above = r.top - h - 6 >= 4;
-    const top = above ? r.top - h - 6 : Math.max(4, Math.min(r.top + 4, innerHeight - h - 4));
-    const left = above ? r.left : r.right - w - 4;
+    let top = above ? r.top - h - 6 : Math.max(4, Math.min(r.top + 4, innerHeight - h - 4));
+    let left = Math.max(4, Math.min(above ? r.left : r.right - w - 4, innerWidth - w - 8));
+    // Never cover the top bar (Done must stay reachable): slide left of it,
+    // or drop below the block.
+    const b = $(".bar").getBoundingClientRect();
+    if (top < b.bottom + 4 && top + h > b.top - 4 && left + w > b.left - 6) {
+      if (b.left - w - 10 >= 4) left = b.left - w - 10;
+      else top = Math.min(innerHeight - h - 4, Math.max(r.bottom + 6, b.bottom + 6));
+    }
     bb.style.top = top + "px";
-    bb.style.left = Math.max(4, Math.min(left, innerWidth - w - 8)) + "px";
+    bb.style.left = left + "px";
   };
   const select = (el) => {
     selected = el;
@@ -803,6 +801,73 @@
     }
   });
 
+  // Tooltips: what a button does and its shortcut, shown on hover.
+  const MAC = /Mac|iPhone|iPad/.test(navigator.platform);
+  const MOD = MAC ? "⌘" : "Ctrl+";
+  const ALT = MAC ? "⌥" : "Alt+";
+  const KEYS = [
+    [".edit", "E"],
+    [".undo", MOD + "Z"],
+    [".redo", (MAC ? "⇧⌘" : "Ctrl+Shift+") + "Z"],
+    [".aibtn, [data-act=ai]", "A"],
+    ["[data-act=style]", "S"],
+    ["[data-act=insert]", "I"],
+    ["[data-act=drag]", `${ALT}↑ / ${ALT}↓`],
+    ["[data-act=parent]", "P"],
+    ["[data-act=up]", ALT + "↑"],
+    ["[data-act=down]", ALT + "↓"],
+    ["[data-act=duplicate]", MOD + "D"],
+    ["[data-act=remove]", MAC ? "⌫" : "Delete"],
+    [".primary.save, .primary.apply, .savec, .go", MOD + "↵"],
+    [".cancel, .panel > .x", "Esc"],
+  ];
+  const keyOf = (b) => {
+    const k = KEYS.find(([sel]) => b.matches(sel));
+    return k ? k[1] : "";
+  };
+  for (const b of root.querySelectorAll(".menu button")) {
+    const k = keyOf(b);
+    if (k) b.insertAdjacentHTML("beforeend", `<kbd>${k}</kbd>`);
+  }
+  const tip = $(".tip");
+  let tipFor = null;
+  let tipTimer = 0;
+  const hideTip = () => {
+    clearTimeout(tipTimer);
+    tip.style.display = "none";
+    tipFor = null;
+  };
+  root.addEventListener("pointerover", (e) => {
+    const b = e.target.closest && e.target.closest("button, [title], [data-tip]");
+    if (!b || b === tipFor) return;
+    hideTip();
+    // Our tooltip replaces the slow native one.
+    if (b.title) {
+      b.dataset.tip = b.title;
+      b.removeAttribute("title");
+    }
+    const label = b.dataset.tip || "";
+    const key = b.closest(".menu") ? "" : keyOf(b);
+    if (!label && !key) return;
+    tipFor = b;
+    tipTimer = setTimeout(() => {
+      if (tipFor !== b || !b.isConnected) return;
+      tip.textContent = label;
+      if (key) tip.insertAdjacentHTML("beforeend", `<kbd>${key}</kbd>`);
+      tip.style.display = "block";
+      const r = b.getBoundingClientRect();
+      const w = tip.offsetWidth,
+        h = tip.offsetHeight;
+      const below = r.bottom + 6 + h < innerHeight;
+      tip.style.top = (below ? r.bottom + 6 : r.top - h - 6) + "px";
+      tip.style.left = Math.max(4, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 4)) + "px";
+    }, 350);
+  });
+  root.addEventListener("pointerout", (e) => {
+    if (tipFor && !tipFor.contains(e.relatedTarget)) hideTip();
+  });
+  root.addEventListener("pointerdown", hideTip, true);
+
   // Style panel: prefilled from the SOURCE style attribute, previews live,
   // sends only changed properties so runtime styles never reach the file.
   const splitDecls = (css) =>
@@ -975,7 +1040,6 @@
       });
       srcIn.focus();
     },
-    comment: () => addComment(selected),
     ai: () => openAgent(selected),
     chart: () => {
       const c = chartAt(selected);
@@ -1009,13 +1073,9 @@
   menu.addEventListener("click", onAct);
   menu.addEventListener("mousedown", (e) => e.preventDefault());
   // Keep focus in the edited element when pressing toolbar buttons.
-  // Remember selected text now: finishing a pending text edit can reset it.
-  let barQuote = "";
   bb.addEventListener("mousedown", (e) => {
     e.preventDefault();
     if (e.target.closest(".grip") && selected && e.button === 0) return startDrag(selected, e);
-    const sel = window.getSelection();
-    barQuote = selected && sel && sel.anchorNode && selected.contains(sel.anchorNode) ? String(sel).trim() : "";
   });
 
   // ---------- charts (M4) ----------
@@ -1802,127 +1862,6 @@ ${lib}<script>
     begin(t, { selectAll: true, fresh: true });
   };
 
-  // ---------- comments for agents (M5) ----------
-  let comments = [];
-  const pins = document.createElement("div");
-  root.appendChild(pins);
-  const loadComments = async () => {
-    try {
-      comments = (await api("GET", "/comments")).filter((c) => c.status === "open");
-    } catch {
-      comments = [];
-    }
-    $(".cbtn").textContent = "💬 " + comments.length;
-    $(".cbtn").style.display = comments.length || editMode ? "" : "none";
-    renderPins();
-    if ($(".cmts").style.display === "block") renderList();
-  };
-  const elOfComment = (c) => (c.at == null ? null : document.querySelector(`[data-he="${c.at}"]`));
-  const renderPins = () => {
-    pins.innerHTML = "";
-    comments.forEach((c, i) => {
-      const el = elOfComment(c);
-      if (!el) return;
-      // Pin at the end of the text, not the far edge of a wide block.
-      let r = el.getBoundingClientRect();
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      const tr = range.getBoundingClientRect();
-      if (tr.width && tr.height && tr.right < r.right) r = { top: r.top, bottom: r.bottom, right: tr.right + 14 };
-      if (r.bottom < 0 || r.top > innerHeight) return;
-      const p = document.createElement("button");
-      p.className = "pin";
-      p.textContent = i + 1;
-      p.title = c.text;
-      p.style.left = Math.min(innerWidth - 26, r.right - 10) + "px";
-      p.style.top = Math.max(2, r.top - 10) + "px";
-      p.onclick = () => openList(c.id);
-      pins.appendChild(p);
-    });
-  };
-  const renderList = (focus) => {
-    const list = $(".cmts .list");
-    list.innerHTML = "";
-    if (!comments.length) list.textContent = "No open notes. Select a block, press ✨, then Leave as note.";
-    comments.forEach((c, i) => {
-      const item = document.createElement("div");
-      item.className = "citem" + (c.id === focus ? " focus" : "");
-      const head = document.createElement("div");
-      head.className = "chead";
-      head.textContent = `${i + 1}. <${c.anchor.tag}> ${c.line ? "line " + c.line : "(element not found)"}`;
-      const body = document.createElement("div");
-      body.textContent = c.text;
-      const meta = document.createElement("div");
-      meta.className = "msg";
-      meta.textContent = c.quote ? `on “${c.quote.slice(0, 80)}”` : c.anchor.text.slice(0, 80);
-      const row = document.createElement("div");
-      row.className = "row";
-      const mk = (label, fn) => {
-        const b = document.createElement("button");
-        b.textContent = label;
-        b.onclick = fn;
-        row.appendChild(b);
-      };
-      mk("Go to", () => {
-        const el = elOfComment(c);
-        if (!el) return say("element not found", true);
-        el.scrollIntoView({ block: "center" });
-        if (editMode) select(el);
-      });
-      mk("Resolve", async () => {
-        await api("POST", "/comments", { action: "resolve", cid: c.id });
-        loadComments();
-      });
-      mk("Delete", async () => {
-        await api("POST", "/comments", { action: "delete", cid: c.id });
-        loadComments();
-      });
-      item.append(head, body, meta, row);
-      list.appendChild(item);
-      if (c.id === focus) setTimeout(() => item.scrollIntoView({ block: "nearest" }), 0);
-    });
-  };
-  const openList = (focus) => {
-    $(".cmts").style.display = "block";
-    renderList(focus);
-  };
-  $(".cbtn").onclick = () => {
-    const p = $(".cmts");
-    if (p.style.display === "block") p.style.display = "none";
-    else openList();
-  };
-  $(".cmts .close").onclick = () => ($(".cmts").style.display = "none");
-  $(".cmts .copy").onclick = async () => {
-    const { markdown } = await api("GET", "/comments.md");
-    try {
-      await navigator.clipboard.writeText(markdown);
-      say("copied — paste into your coding agent");
-    } catch {
-      say("clipboard blocked; run: hotedit comments <file>", true);
-    }
-  };
-  const addComment = (el) => {
-    const quote = barQuote;
-    barQuote = "";
-    const panel = $(".cmtp");
-    const ta = $(".cmtp textarea");
-    ta.value = "";
-    $(".cmtp .msg").textContent = quote ? `On “${quote.slice(0, 100)}”` : `On this ${nameOf(el).toLowerCase()}`;
-    openPanel(panel, async () => {
-      const text = ta.value.trim();
-      if (!text) return;
-      try {
-        const r = await api("POST", "/comments", { action: "add", id: Number(idOf(el)), text, quote, version: VERSION });
-        if (r.stale) return reload();
-        say("Note saved for your agent ✓");
-        loadComments();
-      } catch (e) {
-        say(e.message, true);
-      }
-    });
-    ta.focus();
-  };
-
   // ---------- ✨ AI agent: edits the page live ----------
   const ag = $(".agentp");
   const agTa = $(".agentp textarea");
@@ -1937,10 +1876,10 @@ ${lib}<script>
   const agScope = () => {
     const ok = agTarget && agTarget.isConnected;
     if (!ok) agTarget = null;
-    const words = agTarget ? (agTarget.textContent || "").trim().replace(/\s+/g, " ").slice(0, 50) : "";
-    $(".agentp .about").textContent = agTarget ? `About: ${nameOf(agTarget)}${words ? ` “${words}”` : ""}` : "About: the whole page";
+    const words = agTarget && !chartAt(agTarget) ? (agTarget.textContent || "").trim().replace(/\s+/g, " ").slice(0, 50) : "";
+    $(".agentp .about").textContent = agTarget ? `Only changes: ${nameOf(agTarget)}${words ? ` “${words}”` : ""}` : "Can change: the whole page";
+    $(".agentp .about").title = "Click any block on the page to point the AI at just that block";
     $(".agentp .whole").style.display = agTarget ? "" : "none";
-    $(".agentp .tonote").style.display = agTarget ? "" : "none";
     sessionStorage.setItem("he-ai-target", agTarget ? `${VERSION}:${idOf(agTarget)}` : "");
   };
   const agConn = (on) => {
@@ -1958,11 +1897,13 @@ ${lib}<script>
     if (r) r.checked = true;
     $(".agentp .model").value = agInfo.model || "";
     $(".agentp .key").value = "";
+    $(".agentp .cmd").value = agInfo.command || "";
   };
   const agLoad = async () => {
     agInfo = await api("GET", "/agent");
     if (agInfo.job) agJob = agInfo.job;
-    $(".agentp .gear").textContent = agInfo.provider ? `⚙ ${agInfo.provider === "api" ? "API key" : "Claude login"}` : "⚙ Connect AI";
+    const p = agInfo.providers.find((x) => x.id === agInfo.provider);
+    $(".agentp .gear").textContent = p ? `⚙ ${p.name}` : "⚙ Connect AI";
     return agInfo;
   };
   const agRender = () => {
@@ -1988,7 +1929,18 @@ ${lib}<script>
     else if (j.status === "done") add("tool", j.edits ? `Done · ${j.edits} change${j.edits > 1 ? "s" : ""} saved` : "Done · no changes");
     else if (j.status === "stopped") add("tool", "Stopped");
   };
+  // One panel at a time: an open style/chart/HTML panel is saved (as Done
+  // would) so the AI's live updates aren't held back behind it.
+  const saveOpenPanel = async () => {
+    if (!modal) return true;
+    const m = modal;
+    closePanel(true);
+    if (m.save) await m.save();
+    return !reloading;
+  };
   const openAgent = async (el) => {
+    if (!editMode) setMode(true);
+    if (!(await saveOpenPanel())) return;
     agTarget = el || null;
     agShow(true);
     agScope();
@@ -2012,15 +1964,18 @@ ${lib}<script>
   };
   $(".agentp .back").onclick = () => agConn(false);
   $(".agentp .key").onfocus = () => (root.querySelector('.agentp input[value="api"]').checked = true);
+  $(".agentp .cmd").onfocus = () => (root.querySelector('.agentp input[value="command"]').checked = true);
   $(".agentp .savec").onclick = async () => {
     const prov = root.querySelector(".agentp input[name=he-prov]:checked");
     const body = { provider: prov ? prov.value : "", model: $(".agentp .model").value };
     if ($(".agentp .key").value.trim()) body.apiKey = $(".agentp .key").value.trim();
+    if (body.provider === "command") body.command = $(".agentp .cmd").value;
     try {
       await api("POST", "/agent/config", body);
       await agLoad();
       const p = agInfo.providers.find((x) => x.id === agInfo.provider);
-      if (p && !p.available) return say(p.id === "api" ? "Paste an API key first" : "Install Claude Code first, then run `claude` to log in", true);
+      const need = { api: "Paste an API key first", command: "Type your agent's command first", claude: "Install Claude Code first, then run `claude` to log in", codex: "Install Codex first, then run `codex` to log in" };
+      if (p && !p.available) return say(need[p.id], true);
       say("AI connected ✓");
       agConn(false);
       agTa.focus();
@@ -2040,6 +1995,7 @@ ${lib}<script>
     if (!prompt) return agTa.focus();
     if (agInfo && !agInfo.provider) return agConn(true);
     if (editing) await finish(true);
+    if (!(await saveOpenPanel())) return;
     try {
       const r = await api("POST", "/agent/run", { prompt, id: agTarget ? Number(idOf(agTarget)) : null, version: VERSION });
       if (r.stale) return reload();
@@ -2051,15 +2007,6 @@ ${lib}<script>
       if (/Connect an AI/.test(e.message)) return agConn(true);
       say(e.message, true);
     }
-  };
-  $(".agentp .tonote").onclick = () => {
-    const el = agTarget;
-    const text = agTa.value;
-    agShow(false);
-    if (!el) return;
-    select(el);
-    addComment(el);
-    $(".cmtp textarea").value = text;
   };
   $(".agentp .stop").onclick = () => api("POST", "/agent/stop").catch((e) => say(e.message, true));
   $(".agentp .undoai").onclick = async () => {
@@ -2108,19 +2055,24 @@ ${lib}<script>
     if (on) {
       document.head.appendChild(revealHidden);
       loadCharts().then(showSelected);
-      loadComments();
     }
     else {
       finish(true);
       closePanel();
-      loadComments();
       revealHidden.remove();
       select(null);
       showHover(null);
     }
     say(on ? "Click text to type · click a block for tools" : "hotedit");
   };
-  editBtn.onclick = () => setMode(!editMode);
+  // Done saves whatever is open (text, a panel) and stops editing.
+  const done = async () => {
+    if (modal) sessionStorage.setItem("he-edit", "0");
+    if (!(await saveOpenPanel())) return;
+    if (editing) await finish(true);
+    setMode(false);
+  };
+  editBtn.onclick = () => (editMode ? done() : setMode(true));
   const history = async (which) => {
     try {
       const r = await api("POST", "/" + which);
@@ -2155,6 +2107,12 @@ ${lib}<script>
       e.stopPropagation();
       if (Date.now() - dragEndedAt < 400) return;
       if (modal) return switchFromPanel(e);
+      // With ✨ open, a click points the AI at a block (no typing or chart
+      // panel, which would hold back its live updates).
+      if (ag.style.display === "block") {
+        if (editing) finish(true);
+        return select(pick(e.target));
+      }
       if (editing) finish(true);
       const el = pick(e.target);
       showHover(null);
@@ -2226,8 +2184,22 @@ ${lib}<script>
         e.preventDefault();
         return actions[e.key === "ArrowUp" ? "up" : "down"]();
       }
-      if (e.key === "e" && !e.metaKey && !e.ctrlKey && !e.altKey)
-        setMode(!editMode);
+      const plainKey = !e.metaKey && !e.ctrlKey && !e.altKey;
+      const k = e.key.toLowerCase();
+      if (k === "e" && plainKey) editMode ? done() : setMode(true);
+      else if (k === "a" && plainKey) {
+        e.preventDefault();
+        ag.style.display === "block" ? agShow(false) : openAgent(selected);
+      } else if (selected && editMode && plainKey && (k === "s" || k === "i" || k === "p")) {
+        e.preventDefault();
+        bb.querySelector(`[data-act="${{ s: "style", i: "insert", p: "parent" }[k]}"]`).click();
+      } else if (selected && editMode && k === "d" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        menu.querySelector('[data-act="duplicate"]').click();
+      } else if (selected && editMode && (e.key === "Delete" || e.key === "Backspace")) {
+        e.preventDefault();
+        menu.querySelector('[data-act="remove"]').click();
+      }
       else if (e.key === "Escape" && selected) select(null);
       else if (e.key === "z" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -2241,25 +2213,117 @@ ${lib}<script>
     hideMenu();
     if (selected) showSelected();
     if (hover) showHover(hover === selected ? null : hover);
-    renderPins();
   };
   window.addEventListener("scroll", follow, true);
   window.addEventListener("resize", follow);
 
-  // Live reload when the file changes on disk (e.g. an agent rewrote it).
+  // Show a change made elsewhere (the AI, another tab, the file on disk) in
+  // place, without a reload. Returns false when the page has to reload.
+  const at = (id) => document.querySelector(`[data-he="${id}"]`);
+  const applyLive = async (d) => {
+    const p = d.patch;
+    if (!p || d.base !== VERSION || editing || modal || reloading) return false;
+    const old = charts;
+    if (p.kind === "attrs") {
+      const el = at(p.id);
+      if (!el) return false;
+      for (const k of p.remove) el.removeAttribute(k);
+      for (const [k, v] of Object.entries(p.set)) {
+        if (k !== "class") el.setAttribute(k, v);
+        else {
+          // Keep classes a page script added (e.g. Plotly's).
+          const was = p.was.split(/\s+/).filter(Boolean);
+          for (const c of was) el.classList.remove(c);
+          for (const c of v.split(/\s+/).filter(Boolean)) el.classList.add(c);
+        }
+      }
+      if (p.remove.includes("class")) for (const c of p.was.split(/\s+/).filter(Boolean)) el.classList.remove(c);
+      window.dispatchEvent(new Event("resize")); // charts follow a new size
+    } else if (p.kind === "text" || p.kind === "title") {
+      const el = at(p.id);
+      if (!el) return false;
+      el.textContent = p.text;
+    } else if (p.kind === "script") {
+      // Chart code: redraw the charts whose spec changed.
+      await loadCharts();
+      if (charts.length !== old.length) return false;
+      let drawn = 0;
+      for (let i = 0; i < charts.length; i++) {
+        const a = old[i],
+          c = charts[i];
+        if (JSON.stringify(a.specs) === JSON.stringify(c.specs)) continue;
+        const el = chartEl(c);
+        if (a.kind !== c.kind || !el || c.specs.some((x) => x.opaque)) return false;
+        const spec = (x) => Object.fromEntries(x.specs.map((v) => [v.arg, v.value]));
+        if (!(await previewChart(c, el, spec(a), spec(c)))) return false;
+        drawn++;
+      }
+      if (!drawn) return false;
+    } else if (p.kind === "html") {
+      const parent = at(p.parent);
+      const olds = p.remove.map(at);
+      if (!parent || olds.some((x) => !x || x.parentElement !== parent)) return false;
+      const mmd = olds.length === 1 && old.find((c) => c.kind === "mermaid" && c.element === p.remove[0]);
+      if (!mmd && olds.some((x, i) => !domMatchesSource(x, p.sigs[i]))) return false;
+      const anchor = p.at.replace ? olds[0] : p.at.before != null ? at(p.at.before) : p.at.after != null ? at(p.at.after) : null;
+      if (!p.at.end && !anchor) return false;
+      const t = document.createElement("template");
+      t.innerHTML = p.html;
+      if (mmd) {
+        const src = t.content.firstElementChild;
+        if (!src || src.tagName !== olds[0].tagName) return false;
+        const m = await getMermaid();
+        const { svg } = await m.render("he-mmd-" + Date.now(), decodeMermaid(src.innerHTML));
+        src.innerHTML = svg;
+      }
+      if (p.shift) {
+        for (const x of [...document.querySelectorAll("[data-he]")]) {
+          const v = Number(x.dataset.he);
+          if (v > p.last && !olds.some((o) => o.contains(x))) x.dataset.he = String(v + p.shift);
+        }
+      }
+      // Whitespace between replaced elements goes with them.
+      for (let i = 1; i < olds.length; i++) {
+        for (let n = olds[i - 1].nextSibling; n && n !== olds[i]; n = n.nextSibling) if (n.nodeType === 3 && !n.data.trim()) n.data = "";
+      }
+      if (p.at.replace) olds[0].before(t.content);
+      else if (p.at.before != null) anchor.before(t.content);
+      else if (p.at.after != null) anchor.after(t.content);
+      else parent.append(t.content);
+      for (const x of olds) x.remove();
+    } else return false;
+    VERSION = d.version;
+    await loadCharts();
+    if (selected && !selected.isConnected) selected = at(idOf(selected)) || null;
+    if (agTarget && !agTarget.isConnected) {
+      agTarget = at(idOf(agTarget));
+      agScope();
+    }
+    if (hover && !hover.isConnected) showHover((hover = null));
+    showSelected();
+    refreshState();
+    if (d.flash != null) flash(d.flash);
+    return true;
+  };
+  let liveQueue = Promise.resolve();
+
+  // Live updates when the file changes (e.g. the AI or an agent edited it).
   const es = new EventSource(ORIGIN + "/__he/events");
   es.onmessage = (m) => {
     const d = JSON.parse(m.data);
-    if (d.type === "comments") return loadComments();
     if (d.type === "agent") {
       agJob = d.job;
       return agRender();
     }
     if (d.type !== "reload" || d.except === CLIENT) return;
-    if (d.flash != null) sessionStorage.setItem("he-flash", String(d.flash));
-    if (!editing && !modal) return reload();
-    stale = true;
-    say("file changed on disk — finish or Esc to reload", true);
+    liveQueue = liveQueue.then(async () => {
+      if (reloading) return;
+      if (await applyLive(d).catch(() => false)) return;
+      if (d.flash != null) sessionStorage.setItem("he-flash", String(d.flash));
+      if (!editing && !modal) return reload();
+      stale = true;
+      say("file changed on disk — finish or Esc to reload", true);
+    });
   };
 
   const hint = $(".hint");
@@ -2294,7 +2358,6 @@ ${lib}<script>
       if (fresh && el) startNew(el, fresh);
     }
     refreshState();
-    loadComments();
     agRestore();
     const fl = sessionStorage.getItem("he-flash");
     sessionStorage.removeItem("he-flash");
@@ -2311,7 +2374,9 @@ ${lib}<script>
   window.__htmledit = {
     api,
     domMatchesSource,
-    version: VERSION,
+    get version() {
+      return VERSION;
+    },
     pick,
     begin,
     finish,
