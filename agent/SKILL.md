@@ -31,7 +31,7 @@ a small patch. Anything bigger, they leave as a 💬 note for you.
 After writing `report.html`, tell the user how to open it:
 
 ```bash
-npx github:Thewhey-Brian/htmledit report.html   # or `htmledit report.html` if installed
+npx htmledit report.html   # or `htmledit report.html` if installed
 ```
 
 Then: press **E**, click any text to edit, and select a block for its toolbar (＋ add, Aa
@@ -55,4 +55,4 @@ For each note:
 2. Run `htmledit comments report.html --resolve <id> --note "<what you did>"`.
 
 Never edit `.htmledit/*.comments.json` by hand; always use the CLI. If `htmledit` isn't on
-the PATH, use `npx github:Thewhey-Brian/htmledit comments …`.
+the PATH, use `npx htmledit comments …`.

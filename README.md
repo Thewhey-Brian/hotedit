@@ -3,7 +3,7 @@
 **Edit any HTML file in your browser — text, styles, layout and charts — and save the
 changes straight back into the file.** Built for the HTML reports that AI assistants write.
 
-![htmledit demo: edit text, restyle, change a chart, drag a list item, add an item, leave a note](demo/htmledit-demo.gif)
+![htmledit demo: edit text, restyle, change a chart, drag a list item, add an item, leave a note](https://raw.githubusercontent.com/Thewhey-Brian/htmledit/main/demo/htmledit-demo.gif)
 
 AI assistants produce a lot of HTML: reports, dashboards, summaries. They look great, but
 fixing a typo, renaming a chart title or moving a section means digging through thousands
@@ -16,7 +16,7 @@ rewritten, so the file stays clean, diff-friendly and yours.
 You need [Node.js 18+](https://nodejs.org). Then:
 
 ```bash
-npx github:Thewhey-Brian/htmledit report.html
+npx htmledit report.html
 ```
 
 Your browser opens the page. Press **E** (or click **✎ Edit**), click any text and type.
@@ -25,13 +25,13 @@ Changes are saved into `report.html` as you go, and **⌘Z / Ctrl+Z** undoes the
 Not sure which file? Run it with no file and click one from the list:
 
 ```bash
-npx github:Thewhey-Brian/htmledit          # lists the HTML files in this folder
+npx htmledit          # lists the HTML files in this folder
 ```
 
 To install it permanently, so you can just type `htmledit`:
 
 ```bash
-npm install -g github:Thewhey-Brian/htmledit
+npm install -g htmledit
 htmledit report.html
 ```
 
@@ -70,9 +70,9 @@ edit (text in HTML, chart specs inline), hands you the command to open them, and
 your notes:
 
 ```bash
-npx github:Thewhey-Brian/htmledit skill install            # for all projects (~/.claude/skills)
-npx github:Thewhey-Brian/htmledit skill install --project  # for this project only (./.claude/skills)
-npx github:Thewhey-Brian/htmledit skill print              # print it, for AGENTS.md or another agent
+npx htmledit skill install            # for all projects (~/.claude/skills)
+npx htmledit skill install --project  # for this project only (./.claude/skills)
+npx htmledit skill print              # print it, for AGENTS.md or another agent
 ```
 
 ## How it works
