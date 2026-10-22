@@ -95,7 +95,7 @@ function setHook(file, on, matcher, command) {
 const q = (s) => (/^[\w./:@\\-]+$/.test(s) ? s : JSON.stringify(s));
 
 function cmdSkill(opt) {
-  const src = path.join(__dirname, "..", "agent", "SKILL.md");
+  const src = path.join(__dirname, "..", "plugin", "skills", "hotedit", "SKILL.md");
   const text = fs.readFileSync(src, "utf8");
   const act = opt._[1];
   if (act === "print") return process.stdout.write(text);
@@ -126,10 +126,10 @@ function cmdSkill(opt) {
     if (fs.existsSync(settings)) setHook(settings, false);
     return;
   }
-  // The hook runs a copy of agent/hook.js, given this hotedit if it will
+  // The hook runs a copy of plugin/hooks/hook.js, given this hotedit if it will
   // still be here later (a global install or a clone, not an npx cache).
   fs.mkdirSync(state, { recursive: true });
-  fs.copyFileSync(path.join(__dirname, "..", "agent", "hook.js"), hookFile);
+  fs.copyFileSync(path.join(__dirname, "..", "plugin", "hooks", "hook.js"), hookFile);
   const self = fs.realpathSync(__filename);
   const stable = !/[\\/]_npx[\\/]/.test(self);
   const command = `node ${q(hookFile)}${stable ? " " + q(self) : ""}`;

@@ -13,6 +13,11 @@ of lines of generated markup, or asking the AI again. hotedit opens the page in 
 browser so you can click what you see and change it. Only the bytes you changed are
 rewritten, so the file stays clean, diff-friendly and yours.
 
+**It doesn't change what your AI makes.** Let it write the report exactly as it normally
+would, at the same quality and with the same charts, design and depth. hotedit only adds the
+ability to edit it afterwards. Nothing is simplified or re-generated, and nothing is added
+to the file.
+
 ## Quick start (30 seconds)
 
 You need [Node.js 18+](https://nodejs.org). Then:
@@ -107,6 +112,15 @@ Install it once. Your agent then writes reports that are easy to edit (text in H
 specs inline), and **every HTML report it writes opens in hotedit in your browser
 automatically**, ready to edit. Later edits by the agent show up on the page live.
 
+As a Claude Code plugin (skill, auto-open hook and MCP tools in one go):
+
+```
+/plugin marketplace add Thewhey-Brian/hotedit
+/plugin install hotedit@hotedit
+```
+
+Or from the command line:
+
 ```bash
 npx hotedit skill install            # Claude Code, all projects (~/.claude)
 npx hotedit skill install --project  # Claude Code, this project only (./.claude)
@@ -124,6 +138,9 @@ settings and hooks are left as they are.
 * Codex asks you once to trust the new hook.
 * Other agents: `npx hotedit skill print` (paste it into `AGENTS.md`). They open a report
   with `npx -y hotedit open report.html --background`, which returns at once.
+
+The skill only shapes *how* the HTML is written: text in the markup, chart specs inline.
+It tells the agent never to simplify or leave anything out for the sake of editing.
 
 ## How it works
 
@@ -186,6 +203,18 @@ node demo/record.js               # re-record the tour video + GIF (needs ffmpeg
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Get involved
+
+hotedit is young and contributions are very welcome. Good places to start:
+
+* Try it on your own AI-generated reports and [open an issue](https://github.com/Thewhey-Brian/hotedit/issues/new/choose)
+  for anything it can't edit. A sample file helps most.
+* Pick up a [good first issue](https://github.com/Thewhey-Brian/hotedit/labels/good%20first%20issue).
+* Share ideas or show what you made in [Discussions](https://github.com/Thewhey-Brian/hotedit/discussions).
+
+**Roadmap:** more chart libraries (ECharts, Observable Plot, Bokeh), editing external CSS,
+a VS Code extension, and guides for more agents (Gemini CLI, Cursor, OpenCode).
 
 ## Related tools
 

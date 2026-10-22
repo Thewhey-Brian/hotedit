@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-10-22
+
+- **Claude Code plugin**: `/plugin marketplace add Thewhey-Brian/hotedit`, then
+  `/plugin install hotedit@hotedit` installs the skill, the auto-open hook and the MCP
+  tools together. Also listed for the MCP Registry (`server.json`).
+- The skill now tells agents to make reports exactly as good as they otherwise
+  would: editability shapes only how the HTML is written.
 
 - **Auto-open for agents**: `hotedit skill install` now also adds a hook, so
   every HTML report Claude Code writes opens in hotedit in your browser

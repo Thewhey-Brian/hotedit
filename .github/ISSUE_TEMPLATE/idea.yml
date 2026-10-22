@@ -1,0 +1,11 @@
+name: Idea or request
+description: Something you'd like hotedit to do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to do?
+      description: The editing task, and why it matters for your reports.
+    validations:
+      required: true

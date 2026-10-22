@@ -1,0 +1,27 @@
+name: Something doesn't work
+description: A page hotedit can't edit, a wrong save, a crash
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: file
+    attributes:
+      label: A sample file
+      description: Attach the HTML file (or a cut-down copy) if you can. Remove anything private first. It helps more than anything else.
+  - type: input
+    id: env
+    attributes:
+      label: Versions
+      description: "`npx hotedit --version`, your OS and browser"
+      placeholder: "hotedit 0.5.0 · macOS 15 · Chrome 130"
+  - type: dropdown
+    id: from
+    attributes:
+      label: Who made the page?
+      options: [Claude / Claude Code, ChatGPT / Codex, Gemini, Cursor, Jupyter / Quarto / R Markdown, By hand, Other]

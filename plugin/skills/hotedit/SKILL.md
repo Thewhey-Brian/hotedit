@@ -11,6 +11,10 @@ a small patch. They can also ask an AI from inside the page (✨) to change a bl
 
 ## 1. When you write an HTML report, make it easy to edit
 
+This is only about *how* the HTML is written. Make the report exactly as good as you
+otherwise would: same content, depth, design, interactivity and charts. Never simplify or
+leave anything out to make it editable.
+
 - **Put text in the HTML**, not in JavaScript that builds the page. Text inside `<h2>`,
   `<p>`, `<li>`, `<td>` and so on is directly editable; text produced by script is not.
 - **Write chart specs as literals in an inline `<script>`.** hotedit can then edit titles,

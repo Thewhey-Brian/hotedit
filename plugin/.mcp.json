@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "hotedit": { "command": "npx", "args": ["-y", "hotedit@latest", "mcp"] }
+  }
+}

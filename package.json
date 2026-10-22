@@ -1,6 +1,7 @@
 {
   "name": "hotedit",
-  "version": "0.4.0",
+  "version": "0.5.0",
+  "mcpName": "io.github.Thewhey-Brian/hotedit",
   "description": "Edit any HTML file in your browser — text, styles, layout, charts — and save the changes back into the file as small, clean patches. Built for AI-generated reports.",
   "keywords": [
     "html",
@@ -38,7 +39,7 @@
   "files": [
     "bin/",
     "src/",
-    "agent/",
+    "plugin/",
     "demo/showcase.html",
     "README.md",
     "LICENSE",

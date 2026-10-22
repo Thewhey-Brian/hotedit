@@ -1,0 +1,12 @@
+{
+  "name": "hotedit",
+  "description": "hotedit: edit the HTML reports your AI agent writes, in your browser.",
+  "owner": { "name": "Thewhey-Brian", "url": "https://github.com/Thewhey-Brian" },
+  "plugins": [
+    {
+      "name": "hotedit",
+      "source": "./plugin",
+      "description": "Every HTML report your agent writes opens in your browser, ready to edit by hand. Same reports, now editable."
+    }
+  ]
+}

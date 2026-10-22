@@ -123,7 +123,7 @@ test(
       !/package\/(samples|test|playground)\//.test(files) && !/package\/demo\/(?!showcase\.html)/.test(files),
       "no tests/samples/demo in the package:\n" + files,
     );
-    assert.ok(files.includes("package/agent/SKILL.md"));
+    assert.ok(files.includes("package/plugin/skills/hotedit/SKILL.md"));
   assert.ok(files.includes("package/demo/showcase.html"), "hotedit demo needs the showcase");
     execFileSync("npm", ["init", "-y"], { cwd: dir, stdio: "ignore" });
     execFileSync(
@@ -219,7 +219,7 @@ test("hook opens a report the agent wrote, once, in a server that stops when idl
   fs.writeFileSync(path.join(dir, "page.html"), "<h1>{{ title }}</h1>");
   const env = { ...process.env, HOTEDIT_NO_OPEN: "1", HOTEDIT_IDLE_MS: "1500" };
   const hook = (input) =>
-    execFileSync("node", [path.join(ROOT, "agent", "hook.js"), CLI], { input: JSON.stringify({ cwd: dir, ...input }), encoding: "utf8", env });
+    execFileSync("node", [path.join(ROOT, "plugin", "hooks", "hook.js"), CLI], { input: JSON.stringify({ cwd: dir, ...input }), encoding: "utf8", env });
   // Not reports: an app's own page, a template, a non-HTML file.
   assert.strictEqual(hook({ tool_name: "Write", tool_input: { file_path: "src/index.html" } }), "");
   assert.strictEqual(hook({ tool_name: "Write", tool_input: { file_path: "page.html" } }), "");
@@ -245,4 +245,20 @@ test("hook opens a report the agent wrote, once, in a server that stops when idl
     return false;
   };
   assert.ok(await down(), "background server stopped when idle");
+});
+
+test("plugin, marketplace and MCP Registry manifests match package.json", () => {
+  const read = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), "utf8"));
+  const pkg = read("package.json");
+  const plugin = read("plugin/.claude-plugin/plugin.json");
+  const market = read(".claude-plugin/marketplace.json");
+  const server = read("server.json");
+  assert.equal(plugin.version, pkg.version);
+  assert.equal(server.version, pkg.version);
+  assert.equal(server.packages[0].version, pkg.version);
+  assert.equal(server.name, pkg.mcpName);
+  assert.equal(market.plugins[0].source, "./plugin");
+  const hooks = read("plugin/hooks/hooks.json");
+  assert.match(hooks.hooks.PostToolUse[0].hooks[0].command, /CLAUDE_PLUGIN_ROOT\}\/hooks\/hook\.js/);
+  assert.ok(fs.existsSync(path.join(ROOT, "plugin", "skills", "hotedit", "SKILL.md")));
 });
