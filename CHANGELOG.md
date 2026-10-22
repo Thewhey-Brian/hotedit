@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Auto-open for agents**: `hotedit skill install` now also adds a hook, so
+  every HTML report Claude Code writes opens in hotedit in your browser
+  automatically (`--codex` for Codex; `--no-auto` for the skill only;
+  `hotedit skill uninstall` removes both). App and site pages, templates and
+  pages already open are left alone.
+- `hotedit open report.html --background` returns at once and serves the page
+  from a background server that stops by itself once the page has been
+  closed for a while.
+- The repository is now github.com/Thewhey-Brian/hotedit.
 - ✨ is now a chat: the conversation and the AI's progress are on top, the
   box is at the bottom for follow-ups ("now make it shorter"), and the AI is
   told what was asked and done earlier in the chat. **New chat** starts over

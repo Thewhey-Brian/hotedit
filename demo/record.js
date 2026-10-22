@@ -462,7 +462,7 @@ const esc = (s) =>
 
   // ── End ──────────────────────────────────────────────────────────────
   await card(
-    `<div class="title"><h1>hotedit</h1><p>Text · styles · layout · charts · maths · AI, live</p><code class="cmd">npx hotedit demo</code><p style="font-size:20px;margin-top:22px;color:#94a3b8">github.com/Thewhey-Brian/htmledit</p></div>`,
+    `<div class="title"><h1>hotedit</h1><p>Text · styles · layout · charts · maths · AI, live</p><code class="cmd">npx hotedit demo</code><p style="font-size:20px;margin-top:22px;color:#94a3b8">github.com/Thewhey-Brian/hotedit</p></div>`,
   );
   await pause(3800);
 

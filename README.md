@@ -3,9 +3,9 @@
 **Edit any HTML file in your browser — text, styles, layout and charts — and save the
 changes straight back into the file.** Built for the HTML reports that AI assistants write.
 
-![hotedit tour: edit text, restyle, change Plotly, Chart.js, Vega-Lite and Mermaid charts, edit maths, add and drag blocks, ask the AI to change one block live](https://raw.githubusercontent.com/Thewhey-Brian/htmledit/main/demo/hotedit-demo.gif)
+![hotedit tour: edit text, restyle, change Plotly, Chart.js, Vega-Lite and Mermaid charts, edit maths, add and drag blocks, ask the AI to change one block live](https://raw.githubusercontent.com/Thewhey-Brian/hotedit/main/demo/hotedit-demo.gif)
 
-▶ [Watch the full 90-second tour (MP4)](https://github.com/Thewhey-Brian/htmledit/raw/main/demo/hotedit-tour.mp4) · or try it yourself: `npx hotedit demo`
+▶ [Watch the full 90-second tour (MP4)](https://github.com/Thewhey-Brian/hotedit/raw/main/demo/hotedit-tour.mp4) · or try it yourself: `npx hotedit demo`
 
 AI assistants produce a lot of HTML: reports, dashboards, summaries. They look great, but
 fixing a typo, renaming a chart title or moving a section means digging through thousands
@@ -101,14 +101,29 @@ codex mcp add hotedit -- npx -y hotedit mcp
 Tools: `open` (opens the file in hotedit and your browser), `outline`, `read` and `edit`
 (saved and shown live). The agent finds pages you already have open in hotedit, too.
 
-**Claude Code skill.** Install it once, and Claude Code writes reports that are easy to
-edit (text in HTML, chart specs inline) and hands you the command to open them:
+### Skill: your agent's reports open in hotedit by themselves
+
+Install it once. Your agent then writes reports that are easy to edit (text in HTML, chart
+specs inline), and **every HTML report it writes opens in hotedit in your browser
+automatically**, ready to edit. Later edits by the agent show up on the page live.
 
 ```bash
-npx hotedit skill install            # for all projects (~/.claude/skills)
-npx hotedit skill install --project  # for this project only (./.claude/skills)
-npx hotedit skill print              # print it, for AGENTS.md or another agent
+npx hotedit skill install            # Claude Code, all projects (~/.claude)
+npx hotedit skill install --project  # Claude Code, this project only (./.claude)
+npx hotedit skill install --codex    # Codex (~/.codex)
 ```
+
+This adds the skill and a small hook that runs after the agent writes a file. It ignores
+files that aren't HTML, pages that belong to an app or website (under `src/`, `public/`,
+`node_modules/`… or with template tags), and pages already open. The page is served in the
+background, and the server stops by itself once you've closed it for a while. Your other
+settings and hooks are left as they are.
+
+* Skill only, no auto-open: add `--no-auto`. Pause it for one session: `HOTEDIT_AUTO=0`.
+* Remove it: `npx hotedit skill uninstall` (add `--codex` or `--project` to match).
+* Codex asks you once to trust the new hook.
+* Other agents: `npx hotedit skill print` (paste it into `AGENTS.md`). They open a report
+  with `npx -y hotedit open report.html --background`, which returns at once.
 
 ## How it works
 
@@ -162,7 +177,7 @@ or ask the AI with ✨.
 ## Development
 
 ```bash
-git clone https://github.com/Thewhey-Brian/htmledit && cd htmledit
+git clone https://github.com/Thewhey-Brian/hotedit && cd hotedit
 npm install
 npx playwright install chromium   # browser for the end-to-end tests
 npm test                          # unit, CLI and real-browser tests (~3 min)

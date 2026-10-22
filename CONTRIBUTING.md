@@ -5,7 +5,7 @@ Thanks for helping! Issues and pull requests are welcome.
 ## Setup
 
 ```bash
-git clone https://github.com/Thewhey-Brian/htmledit && cd htmledit
+git clone https://github.com/Thewhey-Brian/hotedit && cd hotedit
 npm install
 npx playwright install chromium
 npm test

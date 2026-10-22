@@ -26,17 +26,23 @@ a small patch. They can also ask an AI from inside the page (✨) to change a bl
 - **Keep it one self-contained file.** Inline small images as `data:` URIs, or put them next
   to the file.
 
-## 2. Hand it over
+## 2. Open it for the person
 
-After writing `report.html`, tell the user how to open it:
+When you've written the report, open it in hotedit so the person can start editing:
 
-```bash
-npx hotedit report.html   # or `hotedit report.html` if installed
-```
+- If a hook message says **"hotedit: Opened … in hotedit at http://…"** (or "Already open"),
+  it's already in their browser. Just say so and give the link.
+- If you have the hotedit MCP tools, call `open` with the file.
+- Otherwise run this yourself. It returns at once, opens their browser, and the server stops
+  by itself once the page has been closed for a while:
 
-Then: click **✎ Edit**, click any text to edit, and select a block for its toolbar (＋ add, Aa
-style, drag ⠿ to move, 📊 chart). Don't launch it yourself unless they ask, because it opens
-a browser and keeps a server running.
+  ```bash
+  npx -y hotedit open report.html --background
+  ```
+
+Then tell them: click **✎ Edit** (or ⌥E), click any text to edit, select a block for its
+toolbar (＋ add, Aa style, drag ⠿ to move), or click ✨ to ask an AI to change a block.
+After that, edits you make to the file show up on their page live, without a reload.
 
 ## 3. Edit live with the hotedit MCP tools (if you have them)
 

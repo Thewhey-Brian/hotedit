@@ -19,13 +19,13 @@
     "agent",
     "mcp"
   ],
-  "homepage": "https://github.com/Thewhey-Brian/htmledit#readme",
+  "homepage": "https://github.com/Thewhey-Brian/hotedit#readme",
   "bugs": {
-    "url": "https://github.com/Thewhey-Brian/htmledit/issues"
+    "url": "https://github.com/Thewhey-Brian/hotedit/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Thewhey-Brian/htmledit.git"
+    "url": "git+https://github.com/Thewhey-Brian/hotedit.git"
   },
   "license": "MIT",
   "author": "Thewhey-Brian (https://github.com/Thewhey-Brian)",

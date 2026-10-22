@@ -184,3 +184,65 @@ test("hotedit --demo serves a throwaway copy of the showcase", { timeout: 30000 
     p.kill();
   }
 });
+
+test("skill install adds the auto-open hook (keeping other settings), uninstall removes it", () => {
+  const home = tmp();
+  const env = { ...process.env, HOME: home, USERPROFILE: home };
+  const file = path.join(home, ".claude", "settings.json");
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const mine = { matcher: "Bash", hooks: [{ type: "command", command: "echo mine" }] };
+  fs.writeFileSync(file, JSON.stringify({ model: "x", hooks: { PostToolUse: [mine] } }));
+  run(["skill", "install"], { env });
+  run(["skill", "install"], { env }); // twice: still one hook
+  let cfg = JSON.parse(fs.readFileSync(file, "utf8"));
+  assert.strictEqual(cfg.model, "x");
+  assert.strictEqual(cfg.hooks.PostToolUse.length, 2);
+  assert.deepStrictEqual(cfg.hooks.PostToolUse[0], mine);
+  assert.match(cfg.hooks.PostToolUse[1].hooks[0].command, /hotedit-hook\.js/);
+  assert.ok(fs.existsSync(path.join(home, ".claude", "skills", "hotedit", "SKILL.md")));
+  // Codex: its own skills folder and hooks.json.
+  run(["skill", "install", "--codex"], { env });
+  const cx = JSON.parse(fs.readFileSync(path.join(home, ".codex", "hooks.json"), "utf8"));
+  assert.match(cx.hooks.PostToolUse[0].matcher, /apply_patch/);
+  assert.ok(fs.existsSync(path.join(home, ".codex", "skills", "hotedit", "SKILL.md")));
+  run(["skill", "uninstall"], { env });
+  cfg = JSON.parse(fs.readFileSync(file, "utf8"));
+  assert.deepStrictEqual(cfg, { model: "x", hooks: { PostToolUse: [mine] } });
+  assert.ok(!fs.existsSync(path.join(home, ".claude", "skills", "hotedit")));
+});
+
+test("hook opens a report the agent wrote, once, in a server that stops when idle", { timeout: 60000 }, async () => {
+  const dir = tmp();
+  fs.mkdirSync(path.join(dir, "src"));
+  fs.writeFileSync(path.join(dir, "report.html"), "<!doctype html><body><h1>Report</h1></body>");
+  fs.writeFileSync(path.join(dir, "src", "index.html"), "<!doctype html><body><h1>App</h1></body>");
+  fs.writeFileSync(path.join(dir, "page.html"), "<h1>{{ title }}</h1>");
+  const env = { ...process.env, HOTEDIT_NO_OPEN: "1", HOTEDIT_IDLE_MS: "1500" };
+  const hook = (input) =>
+    execFileSync("node", [path.join(ROOT, "agent", "hook.js"), CLI], { input: JSON.stringify({ cwd: dir, ...input }), encoding: "utf8", env });
+  // Not reports: an app's own page, a template, a non-HTML file.
+  assert.strictEqual(hook({ tool_name: "Write", tool_input: { file_path: "src/index.html" } }), "");
+  assert.strictEqual(hook({ tool_name: "Write", tool_input: { file_path: "page.html" } }), "");
+  assert.strictEqual(hook({ tool_name: "Write", tool_input: { file_path: "notes.md" } }), "");
+  const first = JSON.parse(hook({ tool_name: "Write", tool_input: { file_path: "report.html" } }));
+  const ctx = first.hookSpecificOutput.additionalContext;
+  const url = /at (http:\/\/\S+)/.exec(ctx)[1];
+  assert.match(ctx, /Opened .*report\.html in hotedit/);
+  assert.match(await (await fetch(url)).text(), /<h1 data-he="\d+">Report<\/h1>/);
+  // Codex apply_patch, same file: already open.
+  const again = JSON.parse(hook({ tool_name: "apply_patch", tool_input: { input: "*** Begin Patch\n*** Update File: report.html\n@@\n*** End Patch" } }));
+  assert.match(again.hookSpecificOutput.additionalContext, new RegExp(`Already open in hotedit at ${url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+  // Nobody opens the page: the background server stops by itself.
+  const down = async () => {
+    for (let i = 0; i < 60; i++) {
+      try {
+        await fetch(url);
+      } catch {
+        return true;
+      }
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    return false;
+  };
+  assert.ok(await down(), "background server stopped when idle");
+});
