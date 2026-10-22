@@ -1,6 +1,9 @@
 // Records the hotedit tour on demo/showcase.html:
+//   node demo/audio.mjs        → voice-over, sound effects, music (ElevenLabs; optional)
 //   node demo/record.js        → demo/hotedit-tour.mp4 + demo/hotedit-demo.gif
 // Needs ffmpeg and network access (the showcase loads its chart libraries from CDNs).
+// With demo/.media from audio.mjs, each scene lasts at least as long as its
+// line of narration (demo/narration.json) and the tour gets its sound track.
 // Captions, click ripples and the title/terminal/diff cards are drawn by this
 // script for the video only; they are not part of hotedit.
 "use strict";
@@ -14,6 +17,11 @@ process.env.HTMLEDIT_BACKUP_DIR ||= fs.mkdtempSync(
   path.join(os.tmpdir(), "hotedit-backups-"),
 );
 const { start } = require("../src/server");
+
+const MEDIA = path.join(__dirname, ".media");
+const VO = fs.existsSync(path.join(MEDIA, "durations.json"))
+  ? JSON.parse(fs.readFileSync(path.join(MEDIA, "durations.json"), "utf8"))
+  : null;
 
 const W = 1280,
   H = 800;
@@ -115,6 +123,66 @@ function recLayer() {
   else make();
 }
 
+// The report "your agent wrote" in the agent scene.
+const WEEKLY = `<!doctype html>
+<html><head><meta charset="utf-8"><title>Weekly sales</title>
+<style>
+  body { font: 17px/1.6 Inter, -apple-system, system-ui, sans-serif; color: #0f172a; margin: 0; background: #f8fafc; }
+  main { max-width: 760px; margin: 0 auto; padding: 70px 32px; }
+  h1 { font-size: 40px; letter-spacing: -.02em; margin: 0 0 6px; }
+  .sub { color: #64748b; margin: 0 0 28px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+  th { background: #eef2ff; font-weight: 600; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+</style></head>
+<body><main>
+<h1>Weekly sales, Oct 12–18</h1>
+<p class="sub">Written by Claude Code · opened in hotedit automatically</p>
+<p>Online sales led the week, up 12% on the week before. Retail held steady.</p>
+<table>
+  <tr><th>Channel</th><th>Orders</th><th>Revenue</th></tr>
+  <tr><td>Online</td><td class="n">1,284</td><td class="n">$96,300</td></tr>
+  <tr><td>Retail</td><td class="n">842</td><td class="n">$58,900</td></tr>
+  <tr><td>Wholesale</td><td class="n">97</td><td class="n">$41,200</td></tr>
+</table>
+</main></body></html>
+`;
+
+// Lay the voice-over, sound effects and a ducked music bed under the video.
+function mixAudio(mp4, scenes, events, length) {
+  const sfx = { tap: 0.22, typing: 0.16, whoosh: 0.32, shimmer: 0.3 };
+  const ins = [];
+  const parts = [];
+  const add = (file, at, vol) => {
+    ins.push("-i", file);
+    const i = ins.length / 2; // input 0 is the video
+    parts.push(`[${i}:a]volume=${vol},adelay=${Math.round(at * 1000)}:all=1[a${i}]`);
+    return `[a${i}]`;
+  };
+  const voices = scenes.map((s) => add(path.join(MEDIA, "voice", `${s.id}.mp3`), s.at + 0.25, 1));
+  let last = {};
+  const fx = [];
+  for (const e of events) {
+    const f = path.join(MEDIA, "sfx", `${e.name}.mp3`);
+    if (!fs.existsSync(f) || e.at - (last[e.name] ?? -9) < 0.35) continue;
+    last[e.name] = e.at;
+    fx.push(add(f, e.at, sfx[e.name] || 0.2));
+  }
+  ins.push("-stream_loop", "-1", "-i", path.join(MEDIA, "music", "bed.mp3"));
+  const m = ins.filter((x) => x === "-i").length;
+  const f = [
+    ...parts,
+    `${voices.join("")}amix=inputs=${voices.length}:normalize=0,asplit[vo][key]`,
+    `[${m}:a]volume=0.22,atrim=0:${length},afade=t=in:d=1.5,afade=t=out:st=${Math.max(0, length - 3.5)}:d=3.5[bed0]`,
+    `[bed0][key]sidechaincompress=threshold=0.03:ratio=6:attack=40:release=600[bed]`,
+    `[vo][bed]${fx.join("")}amix=inputs=${2 + fx.length}:normalize=0,atrim=0:${length},loudnorm=I=-16:TP=-1.5:LRA=11[out]`,
+  ];
+  const tmp = mp4.replace(/\.mp4$/, ".mixed.mp4");
+  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", mp4, ...ins, "-filter_complex", f.join(";"), "-map", "0:v", "-map", "[out]", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", tmp]);
+  fs.renameSync(tmp, mp4);
+}
+
 const esc = (s) =>
   s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
 
@@ -125,12 +193,14 @@ const esc = (s) =>
   const orig = fs.readFileSync(file, "utf8");
   fs.writeFileSync(path.join(dir, "orig.html"), orig);
   const srv = await start(file);
+  let srv2 = null;
   const browser = await chromium
     .launch()
     .catch(() => chromium.launch({ channel: "chrome" }));
   const ctx = await browser.newContext({ viewport: { width: W, height: H } });
   const page = await ctx.newPage();
   await page.addInitScript(recLayer);
+  await page.addInitScript(() => localStorage.setItem("he-hint", "1")); // no first-run hint
   page.on("pageerror", (e) => console.log("pageerror:", e.message));
 
   // Frame capture loop → ffmpeg.
@@ -144,9 +214,11 @@ const esc = (s) =>
     while (!recording) await new Promise((r) => setTimeout(r, 20));
     t0.v = Date.now();
     while (recording) {
+      const t = Date.now();
       const buf = await page
-        .screenshot({ type: "jpeg", quality: 88 })
+        .screenshot({ type: "jpeg", quality: 88, timeout: 1500, caret: "initial" })
         .catch(() => null);
+      if (Date.now() - t > 1000) console.log(`slow frame: ${Date.now() - t} ms at ${((t - t0.v) / 1000).toFixed(1)} s${buf ? "" : " (dropped)"}`);
       if (buf) {
         fs.writeFileSync(path.join(frames, String(n++).padStart(5, "0") + ".jpg"), buf);
         stamps.push(Date.now());
@@ -155,10 +227,27 @@ const esc = (s) =>
   })();
 
   const pause = (ms) => page.waitForTimeout(ms);
+  // Sound track: scene starts (voice lines) and events (clicks, typing…).
+  const now = () => (Date.now() - t0.v) / 1000;
+  const events = [];
+  const ev = (name) => recording && t0.v && events.push({ name, at: now() });
+  const scenes = [];
+  let cur = { at: 0, dur: 0 };
+  const scene = async (id) => {
+    if (VO) {
+      const wait = cur.at + cur.dur + 0.45 - now();
+      if (wait > 0) await pause(wait * 1000);
+    }
+    cur = { id, at: now(), dur: VO ? VO[id] || 0 : 0 };
+    if (id) scenes.push(cur);
+  };
   const ui = (s) => page.locator(`htmledit-overlay ${s}`);
   const cap = (num, text) =>
     page.evaluate(([a, b]) => window.__rec.cap(a, b), [num, text]);
-  const card = (html) => page.evaluate((h) => window.__rec.card(h), html);
+  const card = (html) => {
+    ev("whoosh");
+    return page.evaluate((h) => window.__rec.card(h), html);
+  };
   const hide = () => page.evaluate(() => window.__rec.hide());
   const ready = () =>
     page.waitForFunction(() => window.__htmledit && window.__rec);
@@ -198,9 +287,13 @@ const esc = (s) =>
   const click = async (loc, opts) => {
     const p = await into(loc, opts);
     await pause(200);
+    ev("tap");
     await page.mouse.click(p.x, p.y);
   };
-  const type = (t, delay = 55) => page.keyboard.type(t, { delay });
+  const type = (t, delay = 55) => {
+    if (t.length > 6) ev("typing");
+    return page.keyboard.type(t, { delay });
+  };
   const selectBlock = async (loc, opts) => {
     await click(loc, opts);
     await editing();
@@ -214,7 +307,7 @@ const esc = (s) =>
   };
 
   process.on("unhandledRejection", async (e) => {
-    console.log("FAILED:", e.message.split("\n")[0]);
+    console.log("FAILED:", e.stack);
     const st = await page.evaluate(() => document.querySelector("htmledit-overlay").shadowRoot.querySelector(".status").textContent).catch(() => "?");
     console.log("status:", st);
     await page.screenshot({ path: path.join(os.tmpdir(), "hotedit-tour-fail.png") }).catch(() => {});
@@ -241,16 +334,19 @@ const esc = (s) =>
     `<div class="title"><h1>hotedit</h1><p>Edit any HTML report in your browser.<br>Every change is saved straight into the file.</p><code class="cmd">npx hotedit report.html</code></div>`,
   );
   recording = true;
+  while (!t0.v) await pause(10);
+  await scene("title");
   await pause(3200);
+  await scene("text");
   await hide();
   await pause(900);
 
   // ── 1. Edit mode + text ──────────────────────────────────────────────
-  await cap(1, "An AI wrote this report. Press ⌥E to edit it");
+  await cap(1, "Press ⌥E (Alt+E) to edit");
   await pause(1300);
   await click(ui(".edit"));
   await pause(700);
-  await cap(1, "Click any text and type — the caret lands where you click");
+  await cap(1, "Click any text and type");
   await click(page.locator(".hero h1"), { dx: 470 });
   await editing();
   await page.keyboard.press(MAC ? "Meta+ArrowRight" : "End");
@@ -265,7 +361,8 @@ const esc = (s) =>
   await pause(1100);
 
   // ── 2. Style ─────────────────────────────────────────────────────────
-  await cap(2, "Restyle any block: colours, spacing, corners, borders");
+  await scene("style");
+  await cap(2, "Restyle any block");
   await selectBlock(page.locator(".callout p").first(), { dx: 200 });
   await click(ui(".bb .kind")); // the callout box around the text
   await pause(400);
@@ -282,21 +379,17 @@ const esc = (s) =>
   await pause(1200);
 
   // ── 3. Plotly: form + data, live ─────────────────────────────────────
-  await cap(3, "Click a chart: pick a type, colours, data — it redraws live");
+  await scene("plotly");
+  await cap(3, "Charts: pick a type, tune it, live");
   await click(page.locator("#trend"), { dx: 360, dy: 160 });
   await ui(".chartp").waitFor({ state: "visible" });
   await pause(600);
-  for (const t of ["bar", "area", "line"]) {
+  for (const t of ["bar", "line"]) {
     await click(ui(`.chartp .types [data-type="${t}"]`));
     await pause(t === "line" ? 600 : 1100);
   }
   await click(ui('.chartp [data-tab="form"]'));
   await pause(400);
-  await openSection("Series 1");
-  const mode = ctl(["1", "0", "mode"]).locator("select");
-  await into(mode);
-  await mode.selectOption({ label: "lines+markers" });
-  await pause(900);
   await openSection("Series 3");
   const col = ctl(["1", "2", "line", "color"]).locator(
     "input:not([type=color])",
@@ -309,7 +402,8 @@ const esc = (s) =>
   await pause(1100);
 
   // ── 4. Chart.js + Vega-Lite ──────────────────────────────────────────
-  await cap(4, "Chart.js, Vega-Lite and Mermaid work the same way");
+  await scene("charts");
+  await cap(4, "Chart.js · Vega-Lite · Mermaid");
   await click(page.locator("#ablation"), { dx: 160, dy: 120 });
   await ui(".chartp").waitFor({ state: "visible" });
   await click(ui('.chartp [data-tab="form"]'));
@@ -340,22 +434,9 @@ const esc = (s) =>
   await click(ui(".chartp .apply"));
   await pause(900);
 
-  // ── 5. Mermaid diagram ───────────────────────────────────────────────
-  await click(page.locator("pre.mermaid"), { dx: 300, dy: 60 });
-  await ui(".chartp").waitFor({ state: "visible" });
-  const ta = ui(".chartp textarea");
-  await click(ta, { dy: 40 });
-  await page.keyboard.press(MAC ? "Meta+ArrowDown" : "Control+End");
-  await type('\n  O --> D["dashboard"]', 60);
-  await pause(1600);
-  await click(ui(".chartp .apply"));
-  await pause(900);
-
   // ── 6. Maths ─────────────────────────────────────────────────────────
-  await cap(
-    5,
-    "Rendered maths and diagrams open as source — never saved as output",
-  );
+  await scene("maths");
+  await cap(5, "Maths opens as its source");
   await click(page.locator(".eq").first(), { dx: 300 });
   const src = ui(".src textarea");
   await src.waitFor({ state: "visible" });
@@ -380,14 +461,14 @@ const esc = (s) =>
   await pause(1500);
 
   // ── 7. Insert + drag ─────────────────────────────────────────────────
-  await cap(6, "Add blocks with ＋ and drag ⠿ to re-arrange");
+  await scene("layout");
+  await cap(6, "Add with ＋ · drag ⠿ to move");
   await selectBlock(page.locator(".steps li").last(), { dx: 120 });
   await click(ui('.bb [data-act="insert"]'));
   await pause(700);
-  await Promise.all([
-    page.waitForEvent("load"),
-    click(ui('.ins [data-ins="li"]')),
-  ]);
+  const items = await page.locator(".steps li").count();
+  await click(ui('.ins [data-ins="li"]'));
+  await page.waitForFunction((n) => document.querySelectorAll(".steps li").length > n, items);
   await ready();
   await editing();
   await pause(300);
@@ -400,7 +481,8 @@ const esc = (s) =>
   const first = await page.locator(".steps li").first().boundingBox();
   await moveTo(first.x + 160, first.y + 3, 40);
   await pause(600);
-  await Promise.all([page.waitForEvent("load"), page.mouse.up()]);
+  await page.mouse.up();
+  await page.waitForFunction(() => /Share the report/.test(document.querySelector(".steps li").textContent), null, { timeout: 15000 });
   await ready();
   await pause(1300);
 
@@ -412,9 +494,11 @@ const esc = (s) =>
     FAKE_FIND: "Two coastal regions are still under-dispersed: intervals are 8% too narrow there.",
     FAKE_REPLACE: "Two coastal regions (Gulf, Pacific NW) need wider intervals: about 8% too narrow today.",
     FAKE_DELAY: "900",
+    FAKE_SAY: "I named the two regions and made the sentence plainer.",
   });
   await page.evaluate(() => window.__htmledit.api("POST", "/agent/config", { provider: "claude" }));
-  await cap(7, "✨ Ask AI about one block: it changes only that, live, no reload");
+  await scene("ai");
+  await cap(7, "✨ Ask AI about one block");
   await selectBlock(page.locator(".callout.warn p"), { dx: 220 });
   await click(ui('.bb [data-act="ai"]'));
   await pause(700);
@@ -422,11 +506,70 @@ const esc = (s) =>
   await pause(300);
   await click(ui(".agentp .go"));
   await page.waitForFunction(() => /Gulf/.test(document.querySelector(".callout.warn p").textContent), null, { timeout: 20000 });
+  ev("shimmer");
+  await pause(1500);
+  await moveTo(...(await (async () => {
+    const b = await ui(".agentp .gear").boundingBox();
+    return [b.x + b.width - 30, b.y + b.height / 2];
+  })()));
+  await pause(2200);
+
+  await scene("followup");
+  await cap(7, "Follow up: it's a chat");
+  Object.assign(process.env, {
+    FAKE_FIND: "need wider intervals: about 8% too narrow today.",
+    FAKE_REPLACE: "need wider intervals: about 8% too narrow today. <b>Fix planned for Q4.</b>",
+    FAKE_SAY: "I added that the fix is planned for Q4, in bold.",
+  });
+  await click(ui(".agentp textarea"));
+  await type("Also say the fix is planned for Q4, in bold", 38);
+  await pause(300);
+  await click(ui(".agentp .go"));
+  await page.waitForFunction(() => /Q4/.test(document.querySelector(".callout.warn p").textContent), null, { timeout: 20000 });
+  ev("shimmer");
   await pause(2600);
   await click(ui(".agentp .x"));
-  await pause(600);
+  await pause(500);
+
+  // ── 8b. Your coding agent: reports it writes open by themselves ─────
+  // The terminal lines are what `hotedit skill install` and the auto-open
+  // hook print; the page that opens is a real second hotedit session.
+  await scene("agent");
+  await cap(0, "");
+  const weekly = path.join(dir, "weekly.html");
+  fs.writeFileSync(weekly, WEEKLY);
+  srv2 = await start(weekly);
+  await card(
+    `<div class="panel"><p class="head">Your coding agent's reports open in hotedit by themselves</p><div class="term"><div class="bar"><i></i><i></i><i></i><span>Terminal</span></div><pre id="tl"></pre></div></div>`,
+  );
+  const termLines = [
+    ['<span class="p">$</span> npx hotedit skill install', 900],
+    ["Installed the hotedit skill: ~/.claude/skills/hotedit/SKILL.md", 250],
+    ["Auto-open is on: every HTML report Claude Code writes opens in hotedit.", 1100],
+    ['<span class="p">$</span> claude "Write this week\'s sales report as weekly.html"', 1200],
+    ['<span class="add">⏺ Write(weekly.html)</span>', 600],
+    [`  ⎿ hotedit: Opened weekly.html in hotedit at ${srv2.url}`, 1600],
+  ];
+  for (const [line, wait] of termLines) {
+    if (line.includes("$")) ev("typing");
+    await page.evaluate((l) => (document.getElementById("tl").innerHTML += l + "\n"), line);
+    await pause(wait);
+  }
+  await page.goto(srv2.url);
+  await ready();
+  await pause(900);
+  await cap(8, "Opened for you, ready to edit");
+  await click(ui(".edit"));
+  await pause(500);
+  await click(page.locator("h1"), { dx: 300 });
+  await editing();
+  await page.keyboard.press(MAC ? "Meta+ArrowRight" : "End");
+  await type(" (final)", 80);
+  await page.keyboard.press("Enter");
+  await pause(1200);
 
   // ── 9. The diff ──────────────────────────────────────────────────────
+  await scene("diff");
   await cap(0, "");
   let diff = "";
   try {
@@ -457,6 +600,7 @@ const esc = (s) =>
     `<div class="panel"><p class="head">Every edit landed as a small patch in the original file</p><div class="term"><div class="bar"><i></i><i></i><i></i><span>git diff aurora_report.html · ${changed} of ${orig.split("\n").length} lines changed</span></div><pre>${shown.join("\n")}</pre></div></div>`,
   );
   await pause(6500);
+  await scene("end");
   await hide();
   await pause(400);
 
@@ -465,6 +609,8 @@ const esc = (s) =>
     `<div class="title"><h1>hotedit</h1><p>Text · styles · layout · charts · maths · AI, live</p><code class="cmd">npx hotedit demo</code><p style="font-size:20px;margin-top:22px;color:#94a3b8">github.com/Thewhey-Brian/hotedit</p></div>`,
   );
   await pause(3800);
+  await scene(null);
+  await pause(1200);
 
   recording = false;
   await capture;
@@ -473,14 +619,37 @@ const esc = (s) =>
   await ctx.close();
   await browser.close();
   await srv.stop();
+  await srv2.stop();
 
   const mp4 = path.join(__dirname, "hotedit-tour.mp4");
   const gif = path.join(__dirname, "hotedit-demo.gif");
   // Each frame lasts until the next one was captured (screenshots are not evenly spaced).
+  // With narration, long action stretches play faster (up to 2.4×) so each
+  // scene runs about as long as its line; times are mapped the same way.
+  const speed = scenes.map((sc, i) => {
+    const len = (scenes[i + 1] ? scenes[i + 1].at : (Date.now() - t0.v) / 1000) - sc.at;
+    return VO ? Math.max(1, Math.min(2.4, len / (sc.dur + 1.1))) : 1;
+  });
+  const starts = scenes.map((sc) => sc.at);
+  const warp = (t) => {
+    let out = 0,
+      from = 0,
+      k = 1;
+    for (let i = 0; i < starts.length && starts[i] <= t; i++) {
+      out += (starts[i] - from) / k;
+      from = starts[i];
+      k = speed[i];
+    }
+    return out + (t - from) / k;
+  };
+  const rel = stamps.map((t) => (t - t0.v) / 1000);
+  for (const sc of scenes) sc.at = warp(sc.at);
+  for (const e of events) e.at = warp(e.at);
+  const length = warp(rel[rel.length - 1] + 0.04);
   const list = path.join(frames, "list.txt");
   fs.writeFileSync(
     list,
-    stamps.map((t, i) => `file '${String(i).padStart(5, "0")}.jpg'\nduration ${(((stamps[i + 1] || t + 40) - t) / 1000).toFixed(3)}\n`).join("") +
+    rel.map((t, i) => `file '${String(i).padStart(5, "0")}.jpg'\nduration ${(warp(rel[i + 1] ?? t + 0.04) - warp(t)).toFixed(4)}\n`).join("") +
       `file '${String(stamps.length - 1).padStart(5, "0")}.jpg'\n`,
   );
   const input = ["-f", "concat", "-safe", "0", "-i", list];
@@ -510,8 +679,10 @@ const esc = (s) =>
     "fps=9,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle",
     gif,
   ]);
+  if (VO) mixAudio(mp4, scenes, events, length);
+  fs.writeFileSync(path.join(dir, "timeline.json"), JSON.stringify({ scenes, events }, null, 1));
   const mb = (f) => (fs.statSync(f).size / 1e6).toFixed(1) + " MB";
-  console.log(`frames: ${n} at ${fps} fps, ${secs.toFixed(0)} s`);
+  console.log(`frames: ${n} at ${fps} fps, ${secs.toFixed(0)} s recorded, ${length.toFixed(0)} s tour`);
   console.log("mp4:", mp4, mb(mp4));
   console.log("gif:", gif, mb(gif));
   console.log(`diff: ${changed} changed lines`);

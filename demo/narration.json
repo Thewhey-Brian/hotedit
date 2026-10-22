@@ -1,0 +1,54 @@
+{
+  "voice": "G17SuINrv2H9FC6nvetn",
+  "voiceName": "Christopher (ElevenLabs)",
+  "scenes": [
+    {
+      "id": "title",
+      "text": "This is hot edit. It lets you edit any HTML report right in your browser, and it saves every change straight back into the file."
+    },
+    {
+      "id": "text",
+      "text": "An AI wrote this report. Press Option E, click any text, and just type. The cursor lands exactly where you click."
+    },
+    {
+      "id": "style",
+      "text": "Select a block to restyle it. Give it a new background, a border and rounded corners, and see it update as you go."
+    },
+    {
+      "id": "plotly",
+      "text": "Click a chart to edit it. Switch the chart type with a single click. Then tune the colours, and it redraws live."
+    },
+    {
+      "id": "charts",
+      "text": "Chart JS, Vega Lite and Mermaid diagrams work the same way. Change a number in the data table, and the bars re-sort instantly."
+    },
+    {
+      "id": "maths",
+      "text": "Maths and diagrams open as their source, so the file never fills up with frozen output."
+    },
+    {
+      "id": "layout",
+      "text": "Add new blocks with the plus button. Then drag the handle to move anything into place."
+    },
+    {
+      "id": "ai",
+      "text": "Or just ask an AI. Select one block and say what should change. Only that block is touched, and it lands live, without a reload. The panel shows which model answered."
+    },
+    {
+      "id": "followup",
+      "text": "It's a chat, so you can keep going with a follow-up. The AI remembers what you asked before."
+    },
+    {
+      "id": "agent",
+      "text": "Hot edit works with your coding agent too. Install the skill once. From then on, every report your agent writes opens in hot edit, ready for you to edit."
+    },
+    {
+      "id": "diff",
+      "text": "And through it all, your file stays clean. Every edit is a small patch, so the diff shows exactly what changed."
+    },
+    {
+      "id": "end",
+      "text": "Hot edit. Try it now with N P X hot edit demo."
+    }
+  ]
+}

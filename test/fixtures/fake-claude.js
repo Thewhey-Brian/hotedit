@@ -42,7 +42,7 @@ const rpc = (method, params) =>
   if (process.env.FAKE_DELAY) await new Promise((r) => setTimeout(r, Number(process.env.FAKE_DELAY)));
   const r = await rpc("tools/call", { name: "edit", arguments: { find: process.env.FAKE_FIND, replace: process.env.FAKE_REPLACE } });
   const text = r.result.content[0].text;
-  out({ type: "assistant", message: { content: [{ type: "text", text: r.result.isError ? "Couldn't: " + text : "I made the change." }] } });
+  out({ type: "assistant", message: { content: [{ type: "text", text: r.result.isError ? "Couldn't: " + text : process.env.FAKE_SAY || "I made the change." }] } });
   out({ type: "result", is_error: false, result: "ok" });
   p.kill();
 })().catch((e) => {

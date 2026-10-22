@@ -7,3 +7,6 @@ samples/
 PLAN.md
 .htmledit/
 *.tgz
+# tour audio: generated media and local key pointer
+demo/.media/
+demo/.env

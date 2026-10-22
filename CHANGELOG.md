@@ -11,6 +11,8 @@
   from a background server that stops by itself once the page has been
   closed for a while.
 - The repository is now github.com/Thewhey-Brian/hotedit.
+- New narrated tour video (voice-over, sound and music) covering the ✨ chat,
+  the model label and agent auto-open.
 - ✨ is now a chat: the conversation and the AI's progress are on top, the
   box is at the bottom for follow-ups ("now make it shorter"), and the AI is
   told what was asked and done earlier in the chat. **New chat** starts over

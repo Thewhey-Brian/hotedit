@@ -5,7 +5,7 @@ changes straight back into the file.** Built for the HTML reports that AI assist
 
 ![hotedit tour: edit text, restyle, change Plotly, Chart.js, Vega-Lite and Mermaid charts, edit maths, add and drag blocks, ask the AI to change one block live](https://raw.githubusercontent.com/Thewhey-Brian/hotedit/main/demo/hotedit-demo.gif)
 
-▶ [Watch the full 90-second tour (MP4)](https://github.com/Thewhey-Brian/hotedit/raw/main/demo/hotedit-tour.mp4) · or try it yourself: `npx hotedit demo`
+▶ [Watch the narrated 95-second tour (MP4, sound on)](https://github.com/Thewhey-Brian/hotedit/raw/main/demo/hotedit-tour.mp4) · or try it yourself: `npx hotedit demo`
 
 AI assistants produce a lot of HTML: reports, dashboards, summaries. They look great, but
 fixing a typo, renaming a chart title or moving a section means digging through thousands
@@ -181,6 +181,7 @@ git clone https://github.com/Thewhey-Brian/hotedit && cd hotedit
 npm install
 npx playwright install chromium   # browser for the end-to-end tests
 npm test                          # unit, CLI and real-browser tests (~3 min)
+node demo/audio.mjs               # tour narration, sound effects, music (ElevenLabs key)
 node demo/record.js               # re-record the tour video + GIF (needs ffmpeg)
 ```
 
