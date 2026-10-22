@@ -12,3 +12,7 @@ demo/.media/
 demo/.env
 # launch drafts (local only)
 launch/
+# never commit credentials
+*recovery*codes*
+*.pem
+.env*
