@@ -1,5 +1,6 @@
 // Voice-over, sound effects and music for the tour (ElevenLabs).
 //   node demo/audio.mjs            → demo/.media/{voice,sfx,music}/*.mp3 + durations.json
+//   node demo/audio.mjs demo/social.json → demo/.media/voice-social/*.mp3 + durations-social.json
 //   add --force to regenerate what exists
 // Needs ELEVENLABS_API_KEY in the environment, or in a file named by
 // ENV_FILE=… in demo/.env (both git-ignored). The key is never printed.
@@ -24,7 +25,9 @@ if (!KEY) {
   process.exit(1);
 }
 const force = process.argv.includes("--force");
-const { voice, scenes } = JSON.parse(fs.readFileSync(path.join(here, "narration.json"), "utf8"));
+const script = process.argv.slice(2).find((a) => !a.startsWith("--")) || path.join(here, "narration.json");
+const tag = path.basename(script, ".json") === "narration" ? "" : "-" + path.basename(script, ".json");
+const { voice, scenes, speed = 1.05 } = JSON.parse(fs.readFileSync(script, "utf8"));
 
 async function post(url, body) {
   const res = await fetch(url, {
@@ -38,26 +41,26 @@ async function post(url, body) {
 const secs = (f) =>
   Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f], { encoding: "utf8" }).trim());
 
-for (const d of ["voice", "sfx", "music"]) fs.mkdirSync(path.join(media, d), { recursive: true });
+for (const d of ["voice" + tag, "sfx", "music"]) fs.mkdirSync(path.join(media, d), { recursive: true });
 
 const durations = {};
 for (let i = 0; i < scenes.length; i++) {
   const s = scenes[i];
-  const out = path.join(media, "voice", `${s.id}.mp3`);
+  const out = path.join(media, "voice" + tag, `${s.id}.mp3`);
   if (force || !fs.existsSync(out)) {
     const buf = await post(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`, {
       text: s.text,
       model_id: "eleven_multilingual_v2",
       previous_text: scenes[i - 1] && scenes[i - 1].text,
       next_text: scenes[i + 1] && scenes[i + 1].text,
-      voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: 1.05 },
+      voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed },
     });
     fs.writeFileSync(out, buf);
     console.log("voice", s.id);
   }
   durations[s.id] = secs(out);
 }
-fs.writeFileSync(path.join(media, "durations.json"), JSON.stringify(durations, null, 2));
+fs.writeFileSync(path.join(media, `durations${tag}.json`), JSON.stringify(durations, null, 2));
 
 const SFX = {
   whoosh: ["Soft, airy cinematic whoosh for a scene transition, gentle and clean, no impact", 1.2],

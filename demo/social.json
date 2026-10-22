@@ -1,0 +1,14 @@
+{
+  "voice": "G17SuINrv2H9FC6nvetn",
+  "speed": 1.1,
+  "note": "~40 s social cut of the tour: from/to are seconds in demo/hotedit-tour.mp4 (built by node demo/social.mjs)",
+  "scenes": [
+    { "id": "hook", "from": 9.1, "to": 13.0, "text": "Your AI just wrote you a beautiful report. Now try changing one number." },
+    { "id": "text", "from": 13.0, "to": 17.6, "text": "With hot edit, you just click and type. It saves straight back into the file." },
+    { "id": "charts", "from": 25.5, "to": 32.0, "text": "Charts too. Pick a new type, tune the colours, and it redraws live." },
+    { "id": "ai", "from": 58.7, "to": 69.6, "text": "Or point the AI at one block, and say what should change. Only that block is touched." },
+    { "id": "agent", "from": 77.1, "to": 87.0, "text": "Install the hot edit skill for Claude Code, and every report it writes opens, ready to edit." },
+    { "id": "quality", "from": 88.1, "to": 95.2, "text": "And it never changes what your AI makes. Same report, same quality. Now it's editable." },
+    { "id": "end", "from": 95.7, "to": 98.7, "text": "Try it now. N P X hot edit demo." }
+  ]
+}
